@@ -33,10 +33,10 @@ COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/pytho
 COPY --from=builder /usr/local/bin/uvicorn /usr/local/bin/uvicorn
 
 # Copy application code
-COPY server.py .
+COPY . .
 
-# Expose port 80
+# Expose port 8000
 EXPOSE 8000
 
 # Start the FastAPI server
-CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "ai_server:app", "--host", "0.0.0.0", "--port", "8000"]

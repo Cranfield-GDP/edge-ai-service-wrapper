@@ -2,20 +2,22 @@ import requests
 import time
 
 # Server URL
-SERVER_URL = "http://localhost:8000"  # Replace with the actual server URL if different
+SERVER_URL = "http://localhost:8001"  # Replace with the actual server URL if different
 
-def send_image(file_path):
+def send_image(file_path, ue_id):
     """Send an image to the server and get predictions."""
     url = f"{SERVER_URL}/run"
     with open(file_path, "rb") as file:
         files = {"file": file}
-        response = requests.post(url, files=files)
+        data = {"ue_id": ue_id}
+        print("Sending image to server...")
+        response = requests.post(url, files=files, data=data, timeout=5)
     
     if response.status_code == 200:
         print("Predictions:")
         for prediction in response.json().get("predictions", []):
-            print(f"Category ID: {prediction['category_id']}, Label: {prediction.get('category_name', 'N/A')}, Probability: {prediction['probability']:.4f}")
-        print("Execution Time:", response.json().get("execution_time", "N/A"))
+            print(f"Category ID: {prediction['category_id']}, Label: {prediction['label']}, Probability: {prediction['probability']:.4f}")
+        print("Execution Duration:", response.json().get("execution_duration", "N/A"))
     else:
         print(f"Error: {response.status_code}, {response.text}")
 
@@ -29,17 +31,18 @@ def get_help():
     else:
         print(f"Error: {response.status_code}, {response.text}")
 
-def get_resource_usage():
-    """Get resource usage from the server."""
-    url = f"{SERVER_URL}/resource"
-    response = requests.get(url)
+def get_ue_log(ue_id):
+    """Retrieve logs for a specific UE_ID."""
+    url = f"{SERVER_URL}/get_ue_log"
+    params = {"ue_id": ue_id}
+    response = requests.get(url, params=params)
     if response.status_code == 200:
-        print("Resource Usage:")
+        print(f"Logs for UE_ID {ue_id}:")
         print(response.json())
     else:
         print(f"Error: {response.status_code}, {response.text}")
 
-def pressure_test(file_path, num_requests):
+def pressure_test(file_path, ue_id, num_requests):
     """Perform a pressure test by sending the image multiple times."""
     url = f"{SERVER_URL}/run"
     with open(file_path, "rb") as file:
@@ -47,7 +50,7 @@ def pressure_test(file_path, num_requests):
 
     start_time = time.time()
     for i in range(num_requests):
-        response = requests.post(url, files=files)
+        response = requests.post(url, files={"file": files["file"]}, data={"ue_id": ue_id})
         if response.status_code == 200:
             print(f"Request {i + 1}/{num_requests} succeeded.")
         else:
@@ -58,20 +61,23 @@ def pressure_test(file_path, num_requests):
 if __name__ == "__main__":
     print("1. Send an image for prediction")
     print("2. Get help information")
-    print("3. Get resource usage")
+    print("3. Get logs for a specific UE_ID")
     print("4. Perform a pressure test")
     choice = input("Enter your choice: ")
 
     if choice == "1":
         file_path = input("Enter the path to the image file: ")
-        send_image(file_path)
+        ue_id = input("Enter the UE_ID: ")
+        send_image(file_path, ue_id)
     elif choice == "2":
         get_help()
     elif choice == "3":
-        get_resource_usage()
+        ue_id = input("Enter the UE_ID: ")
+        get_ue_log(ue_id)
     elif choice == "4":
         file_path = input("Enter the path to the image file: ")
+        ue_id = input("Enter the UE_ID: ")
         num_requests = int(input("Enter the number of requests to send: "))
-        pressure_test(file_path, num_requests)
+        pressure_test(file_path, ue_id, num_requests)
     else:
         print("Invalid choice.")
