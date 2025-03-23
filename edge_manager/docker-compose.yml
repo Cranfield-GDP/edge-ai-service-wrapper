@@ -1,0 +1,29 @@
+services:
+  edge_manager:
+    build: .
+    container_name: edge_manager
+    ports:
+      - "8000:8000"
+    networks:
+      - edge_management_network
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017/ai_services_db
+    depends_on:
+      - mongodb
+
+  mongodb:
+    image: mongo:6.0
+    container_name: mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    networks:
+      - edge_management_network
+    volumes:
+      - mongodb_data:/data/db
+
+volumes:
+  mongodb_data:
+
+networks:
+  edge_management_network:

@@ -8,6 +8,7 @@ from utils import (
     get_hf_model_directory,
     download_model_readme,
     copy_test_image,
+    update_edge_ai_service_db,
 )
 
 def main():
@@ -22,7 +23,8 @@ def main():
         print("4. Open another terminal to test the AI service")
         print("5. Download the README file for the Hugging Face model")
         print("6. Copy a test image for the Hugging Face model")
-        print("7. Quit")
+        print("7. Update the edge AI service database")
+        print("q. Quit")
         
         try:
             choice = input("Enter your choice (1-7): ").strip()
@@ -45,8 +47,7 @@ def main():
                 huggingface_model_name = input(f"Enter the Hugging Face model name (default: {huggingface_model_name}): ")
                 if not huggingface_model_name:
                     huggingface_model_name = huggingface_model_name_default
-                ai_service_image_name = get_docker_image_build_name(huggingface_model_name)
-                push_docker_image_main(ai_service_image_name)
+                push_docker_image_main(huggingface_model_name)
                 print("Docker image upload completed successfully.")
             
             elif choice == "4":
@@ -96,6 +97,16 @@ def main():
                     print(f"Error: {e}")
             
             elif choice == "7":
+                huggingface_model_name = input(f"Enter the Hugging Face model name (default: {huggingface_model_name}): ")
+                if not huggingface_model_name:
+                    huggingface_model_name = huggingface_model_name_default
+                try:
+                    update_edge_ai_service_db(huggingface_model_name)
+                    print("Edge AI service database updated successfully.")
+                except Exception as e:
+                    print(f"Error: {e}")
+
+            elif choice == "q":
                 print("Exiting the program. Goodbye!")
                 sys.exit(0)
             

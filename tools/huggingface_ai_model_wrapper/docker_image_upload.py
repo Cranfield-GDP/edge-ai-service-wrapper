@@ -2,13 +2,15 @@ import os
 import subprocess
 
 from dotenv import load_dotenv
-from utils import (get_docker_image_build_name)
+from utils import (get_docker_image_build_name, get_image_repository_full_url)
 
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", "..", ".env"))
 
 
-def push_docker_image_main(ai_service_image_name: str) -> None:
+def push_docker_image_main(huggingface_model_name: str) -> None:
     # check if the docker image exists
+    ai_service_image_name = get_docker_image_build_name(huggingface_model_name)
+
     try:
         subprocess.run(
             ["docker", "image", "inspect", ai_service_image_name],
@@ -24,26 +26,22 @@ def push_docker_image_main(ai_service_image_name: str) -> None:
     # --------------------------------
     # Push the docker image to docker hub
     # ---------------------------------
-    docker_username = os.getenv("DOCKER_USERNAME")
-    docker_registry = os.getenv("DOCKER_REGISTRY", "docker.io")
-    docker_image_name = f"{docker_username}/{ai_service_image_name}"
-    docker_image_full_name = f"{docker_registry}/{docker_image_name}"
-    docker_image_full_name = docker_image_full_name.replace(" ", "_")
+    docker_image_repository_url = get_image_repository_full_url(huggingface_model_name)
 
-    print(f"Pushing the docker image '{docker_image_full_name}' to Docker Hub...")
+    print(f"Pushing the docker image '{docker_image_repository_url}' to Docker Hub...")
     subprocess.run(
-        ["docker", "tag", ai_service_image_name, docker_image_full_name],
+        ["docker", "tag", ai_service_image_name, docker_image_repository_url],
         check=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
     subprocess.run(
-        ["docker", "push", docker_image_full_name],
+        ["docker", "push", docker_image_repository_url],
         check=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
-    print(f"The docker image '{docker_image_full_name}' has been pushed to Docker Hub.")
+    print(f"The docker image '{docker_image_repository_url}' has been pushed to Docker Hub.")
 
 
 if __name__ == "__main__":
