@@ -4,7 +4,6 @@ from code_generation import code_generation_main
 from docker_validation import build_and_start_docker_container
 from docker_image_upload import push_docker_image_main
 from utils import (
-    get_docker_image_build_name,
     get_hf_model_directory,
     download_model_readme,
     copy_test_image,
@@ -30,23 +29,23 @@ def main():
             choice = input("Enter your choice (1-7): ").strip()
             
             if choice == "1":
-                huggingface_model_name = input(f"Enter the Hugging Face model name (default: {huggingface_model_name}): ")
-                if not huggingface_model_name:
-                    huggingface_model_name = huggingface_model_name_default
+                new_model_name = input(f"Enter the Hugging Face model name (default: {huggingface_model_name}): ")
+                if new_model_name.strip():
+                    huggingface_model_name = new_model_name
                 code_generation_main(huggingface_model_name)
                 print("Code generation completed successfully.")
             
             elif choice == "2":
-                huggingface_model_name = input(f"Enter the Hugging Face model name (default: {huggingface_model_name}): ")
-                if not huggingface_model_name:
-                    huggingface_model_name = huggingface_model_name_default
+                new_model_name = input(f"Enter the Hugging Face model name (default: {huggingface_model_name}): ")
+                if new_model_name.strip():
+                    huggingface_model_name = new_model_name
                 build_and_start_docker_container(huggingface_model_name)
                 print("Docker validation and container startup completed successfully.")
             
             elif choice == "3":
-                huggingface_model_name = input(f"Enter the Hugging Face model name (default: {huggingface_model_name}): ")
-                if not huggingface_model_name:
-                    huggingface_model_name = huggingface_model_name_default
+                new_model_name = input(f"Enter the Hugging Face model name (default: {huggingface_model_name}): ")
+                if new_model_name.strip():
+                    huggingface_model_name = new_model_name
                 push_docker_image_main(huggingface_model_name)
                 print("Docker image upload completed successfully.")
             
@@ -58,9 +57,9 @@ def main():
 
                 python_executable = sys.executable
                 
-                huggingface_model_name = input(f"Enter the Hugging Face model name (default: {huggingface_model_name}): ")
-                if not huggingface_model_name:
-                    huggingface_model_name = huggingface_model_name_default
+                new_model_name = input(f"Enter the Hugging Face model name (default: {huggingface_model_name}): ")
+                if new_model_name.strip():
+                    huggingface_model_name = new_model_name
                 ai_model_directory = get_hf_model_directory(huggingface_model_name)
 
                 # Check if system is Windows or Linux/Mac
@@ -77,9 +76,9 @@ def main():
                     )
 
             elif choice == "5":
-                huggingface_model_name = input(f"Enter the Hugging Face model name (default: {huggingface_model_name}): ")
-                if not huggingface_model_name:
-                    huggingface_model_name = huggingface_model_name_default
+                new_model_name = input(f"Enter the Hugging Face model name (default: {huggingface_model_name}): ")
+                if new_model_name.strip():
+                    huggingface_model_name = new_model_name
                 try:
                     readme_path = download_model_readme(huggingface_model_name)
                     print(f"README downloaded successfully: {readme_path}")
@@ -87,9 +86,9 @@ def main():
                     print(f"Error: {e}")
             
             elif choice == "6":
-                huggingface_model_name = input(f"Enter the Hugging Face model name (default: {huggingface_model_name}): ")
-                if not huggingface_model_name:
-                    huggingface_model_name = huggingface_model_name_default
+                new_model_name = input(f"Enter the Hugging Face model name (default: {huggingface_model_name}): ")
+                if new_model_name.strip():
+                    huggingface_model_name = new_model_name
                 try:
                     test_image_path = copy_test_image(huggingface_model_name)
                     print(f"Test image copied successfully: {test_image_path}")
@@ -97,9 +96,9 @@ def main():
                     print(f"Error: {e}")
             
             elif choice == "7":
-                huggingface_model_name = input(f"Enter the Hugging Face model name (default: {huggingface_model_name}): ")
-                if not huggingface_model_name:
-                    huggingface_model_name = huggingface_model_name_default
+                new_model_name = input(f"Enter the Hugging Face model name (default: {huggingface_model_name}): ")
+                if new_model_name.strip():
+                    huggingface_model_name = new_model_name
                 try:
                     update_edge_ai_service_db(huggingface_model_name)
                     print("Edge AI service database updated successfully.")
