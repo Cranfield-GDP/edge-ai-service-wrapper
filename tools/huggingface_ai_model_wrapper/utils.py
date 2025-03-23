@@ -216,3 +216,34 @@ def get_docker_image_build_name(model_name: str) -> str:
 def get_docker_container_run_name(model_name: str) -> str:
     """Get the docker container run name."""
     return f"cranfield-edge-{model_name.replace('/', '-')}-server".lower()
+
+
+def download_model_readme(model_name: str) -> str:
+    """Download the README file for the Hugging Face model."""
+    readme_content = get_hf_model_readme(model_name)
+    if readme_content:
+        readme_file_path = os.path.join(get_hf_model_directory(model_name), "README.md")
+        with open(readme_file_path, "w") as file:
+            file.write(readme_content)
+        return readme_file_path
+    else:
+        raise Exception(f"Failed to download the README file for model {model_name}.")
+    
+def copy_test_image(model_name: str) -> str:
+    """Copy a test image for the model."""
+    assert get_hf_model_directory(model_name), f"Model directory not found for {model_name}."
+    
+    test_image_file = "puppy.png"
+    test_image_output_path = os.path.join(
+        get_hf_model_directory(model_name), test_image_file
+    )
+
+    test_image_source_path = os.path.join(
+        os.path.dirname(__file__), "test_assets", test_image_file
+    )
+    assert os.path.exists(test_image_source_path), f"Test image not found: {test_image_source_path}"
+
+    with open(test_image_source_path, "rb") as source_file:
+            with open(test_image_output_path, "wb") as dest_file:
+                dest_file.write(source_file.read())
+        
