@@ -39,6 +39,8 @@ class Logger:
     def get_ue_run_log(self, ue_id):
         """Retrieve the run log for a specific UE_ID."""
         with self.lock:
+            if ue_id not in self.ue_logs:
+                return None
             return {
                 "container_id": self.container_id,
                 "container_name": self.container_name,

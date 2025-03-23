@@ -211,4 +211,8 @@ def get_available_port() -> int:
 
 def get_docker_image_build_name(model_name: str) -> str:
     """Get the docker image build name."""
-    return f"cranfield-edge-{model_name.replace('/', '-')}:latest"
+    return f"cranfield-edge-{model_name.replace('/', '-')}:latest".lower()
+
+def get_docker_container_run_name(model_name: str) -> str:
+    """Get the docker container run name."""
+    return f"cranfield-edge-{model_name.replace('/', '-')}-server".lower()

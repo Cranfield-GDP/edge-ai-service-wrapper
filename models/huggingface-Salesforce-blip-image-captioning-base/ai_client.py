@@ -4,7 +4,7 @@ import time
 SERVER_URL = input("Please input server URL (e.g., http://localhost:54660): ")  # Replace with the actual server URL if different
 
 def send_image(file_path, ue_id):
-    """Send an image to the server and get detections."""
+    """Send an image to the server and get image caption."""
     url = f"{SERVER_URL}/run"
     with open(file_path, "rb") as file:
         files = {"file": file}
@@ -13,9 +13,9 @@ def send_image(file_path, ue_id):
         try:
             response = requests.post(url, files=files, data=data, timeout=5)
             if response.status_code == 200:
-                print("Detections:")
-                for detection in response.json().get("predictions", []):
-                    print(f"Detected {detection['label']} with confidence {detection['score']:.3f} at location {detection.get('box', 'N/A')}")
+                print("Captions:")
+                caption = response.json().get("caption", "No caption received")
+                print(f"Caption: {caption}")
                 print("Execution Duration:", response.json().get("execution_duration", "N/A"))
             else:
                 print(f"Error: {response.status_code}, {response.text}")
@@ -71,7 +71,7 @@ def pressure_test(file_path, ue_id, num_requests):
 if __name__ == "__main__":
     while True:
         print("\nOptions:")
-        print("1. Send an image for detection")
+        print("1. Send an image for captioning")
         print("2. Get help information")
         print("3. Get logs for a specific UE_ID")
         print("4. Perform a pressure test")
