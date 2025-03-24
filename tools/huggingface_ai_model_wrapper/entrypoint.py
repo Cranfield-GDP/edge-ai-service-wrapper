@@ -3,6 +3,7 @@ import sys
 from code_generation import code_generation_main
 from docker_validation import build_and_start_docker_container
 from docker_image_upload import push_docker_image_main
+import traceback
 from utils import (
     get_hf_model_directory,
     download_model_readme,
@@ -114,6 +115,9 @@ def main():
         
         except Exception as e:
             print(f"An error occurred: {e}")
+            # print the stack trace for debugging
+            traceback.print_exc()
+            print("Please try again.")
             print("Returning to the main menu...")
 
 if __name__ == "__main__":

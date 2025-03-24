@@ -87,6 +87,7 @@ Below is an example server script content for your reference:
 Requirements:
 - follow the same endpoint design as the example server script.
 - log each request in the same way as the example server script.
+- if the AI model output binary content such as images, return the binary content in the response instead of saving it locally.
 - Output only the raw content of the server script, without any additional text or explanation. 
 - Do not wrap the output inside the ```python``` code block.""",
             }
@@ -178,12 +179,15 @@ Below is the content of the `ai_server.py`
 {example_content[AI_SERVER_SCRIPT_NAME]}
 
 -------------------
-Below is an example client script content for your reference:
+Below is an example client script (for a image processing AI service) for your reference:
 {example_content[AI_CLIENT_SCRIPT_NAME]}
 
 --------------------
 Requirements:
-- follow the same design as the example client script.
+- follow similar commandl line interface design as the example client script.
+- test all the endpoints defined in the server script.
+- If the AI model outputs binary content such as images, save the binary content to a file and print the save path.
+- Do not run AI model in the client script.
 - output only the raw content of the client script, without any additional text or explanation.
 - do not wrap the output inside the ```python``` code block.
 """,

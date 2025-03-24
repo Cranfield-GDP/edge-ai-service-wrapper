@@ -25,12 +25,7 @@ def code_generation_main(huggingface_model_name: str) -> None:
     if not huggingface_model_readme:
         raise (f"The model '{huggingface_model_name}' does not have a README file.")
 
-    example_model_name = input(
-        "Enter the example model name (e.g., 'microsoft/resnet-50') used for reference by LLM: "
-    )
-    assert validate_hf_model_name(
-        example_model_name
-    ), f"The example model '{example_model_name}' is invalid."
+    example_model_name = "example/image-model"
     example_model_directory = get_hf_model_directory(example_model_name)
     assert os.path.exists(
         example_model_directory
