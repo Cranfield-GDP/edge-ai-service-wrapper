@@ -3,6 +3,7 @@ import shutil
 from dotenv import load_dotenv
 from utils import (
     TARGET_FILES_TO_GENERATE,
+    copy_healthcheck_file,
     copy_logger_file,
     generate_ai_client_script,
     generate_ai_server_script,
@@ -60,6 +61,14 @@ def code_generation_main(huggingface_model_name: str) -> None:
         hf_model_directory, example_model_files_content, output_files_content
     )
     print(f"Logger file copied to {hf_model_directory}.")
+
+    # --------------------------------
+    # Copy the healthcheck.py file directly
+    # --------------------------------
+    copy_healthcheck_file(
+        hf_model_directory, example_model_files_content, output_files_content
+    )
+    print(f"Healthcheck file copied to {hf_model_directory}.")
 
     # --------------------------------
     # Generating the AI server file

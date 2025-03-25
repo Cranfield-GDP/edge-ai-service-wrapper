@@ -8,6 +8,7 @@ from utils import (
     get_hf_model_directory,
     download_model_readme,
     copy_test_image,
+    update_edge_ai_service_db,  # Added import for updating the database
 )
 import subprocess
 import sys
@@ -82,6 +83,15 @@ def copy_test_image_ui():
         messagebox.showerror("Error", f"An error occurred: {e}")
 
 
+def update_database():
+    model_name = model_name_entry.get().strip() or huggingface_model_name_default
+    try:
+        update_edge_ai_service_db(model_name)
+        messagebox.showinfo("Success", "Edge AI service database updated successfully.")
+    except Exception as e:
+        messagebox.showerror("Error", f"An error occurred: {e}")
+
+
 def quit_app():
     root.destroy()
 
@@ -103,7 +113,8 @@ tk.Button(root, text="3. Push Docker Image", command=push_docker_image, width=40
 tk.Button(root, text="4. Open Terminal to Test AI Service", command=open_terminal, width=40).pack(pady=5)
 tk.Button(root, text="5. Download README", command=download_readme, width=40).pack(pady=5)
 tk.Button(root, text="6. Copy Test Image", command=copy_test_image_ui, width=40).pack(pady=5)
-tk.Button(root, text="7. Quit", command=quit_app, width=40).pack(pady=5)
+tk.Button(root, text="7. Update Edge AI Service Database", command=update_database, width=40).pack(pady=5)  # New button
+tk.Button(root, text="8. Quit", command=quit_app, width=40).pack(pady=5)
 
 # Run the UI loop
 root.mainloop()

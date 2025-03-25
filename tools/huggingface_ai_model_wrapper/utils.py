@@ -5,12 +5,14 @@ AI_SERVER_SCRIPT_NAME = "ai_server.py"
 AI_CLIENT_SCRIPT_NAME = "ai_client.py"
 DOCKERFILE_NAME = "Dockerfile"
 LOGGER_SCRIPT_NAME = "logger.py"
+HEALTHCHECK_SCRIPT_NAME = "healthcheck.py"
 
 TARGET_FILES_TO_GENERATE = [
     AI_SERVER_SCRIPT_NAME,
     AI_CLIENT_SCRIPT_NAME,
     DOCKERFILE_NAME,
     LOGGER_SCRIPT_NAME,
+    HEALTHCHECK_SCRIPT_NAME
 ]
 
 
@@ -56,6 +58,15 @@ def copy_logger_file(
     with open(logger_file_path, "w") as file:
         file.write(example_content[LOGGER_SCRIPT_NAME])
     output_files_content[LOGGER_SCRIPT_NAME] = example_content[LOGGER_SCRIPT_NAME]
+
+def copy_healthcheck_file(
+    model_output_directory: str, example_content: dict, output_files_content: dict
+) -> None:
+    """Copy the healthcheck.py file directly."""
+    healthcheck_file_path = os.path.join(model_output_directory, HEALTHCHECK_SCRIPT_NAME)
+    with open(healthcheck_file_path, "w") as file:
+        file.write(example_content[HEALTHCHECK_SCRIPT_NAME])
+    output_files_content[HEALTHCHECK_SCRIPT_NAME] = example_content[HEALTHCHECK_SCRIPT_NAME]
 
 
 def generate_ai_server_script(
