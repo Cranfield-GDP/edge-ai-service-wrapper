@@ -22,6 +22,23 @@ services:
     volumes:
       - mongodb_data:/data/db
 
+  mongo-express:
+    image: mongo-express:latest
+    container_name: mongo_express
+    restart: always
+    ports:
+      # username: admin, password: pass
+      - "8081:8081"  # Mongo Express UI will be accessible on port 8081
+    networks:
+      - edge_management_network
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=mongodb  # MongoDB service name
+      - ME_CONFIG_MONGODB_PORT=27017      # MongoDB port
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=  # Optional: Add admin username if authentication is enabled
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=  # Optional: Add admin password if authentication is enabled
+    depends_on:
+      - mongodb
+
 volumes:
   mongodb_data:
 
