@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
 
-class AIServiceImage(BaseModel):
+class AIService(BaseModel):
     model_name: str
     model_url: str
     image_repository_url: str

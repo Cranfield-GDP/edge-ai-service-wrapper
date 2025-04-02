@@ -1,0 +1,21 @@
+services:
+  edge_manager:
+    build: .
+    container_name: edge_manager
+    network_mode: host
+    environment:
+      - MONGO_URI=mongodb://localhost:27018/?directConnection=true
+  
+  mongodb:
+    image: mongodb/mongodb-atlas-local
+    environment:
+      - MONGODB_INITDB_ROOT_USERNAME=user
+      - MONGODB_INITDB_ROOT_PASSWORD=pass
+    volumes:
+      - ./database_init:/docker-entrypoint-initdb.d
+      - database_storage:/data/db
+    ports:
+      - 27017:27017
+
+volumes:
+  database_storage:
