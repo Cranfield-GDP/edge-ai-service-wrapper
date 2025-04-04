@@ -138,8 +138,8 @@ def get_help():
                     "ue_id": "User Equipment ID (string) to retrieve logs for."
                 },
                 "response": {
-                    "container_id": "ID of the container running the model.",
-                    "container_name": "Name of the container running the model.",
+                    "node_id": "Name of the computation node running the model.",
+                    "k8s_pod_name": "Name of the Kubernetes pod running the model.",
                     "model_name": "Name of the AI model.",
                     "ue_id": "User Equipment ID (string) for which logs are retrieved.",
                     "total_input_size": "Total size of input data processed for the UE_ID (in bytes).",

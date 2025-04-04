@@ -1,110 +1,76 @@
-import os
 import time
-import socket
-from fastapi import Form
-import torch
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI
 from fastapi.responses import JSONResponse
-from PIL import Image
-from transformers import AutoImageProcessor, ResNetForImageClassification
-
+from contextlib import asynccontextmanager
 from logger import Logger
 
 # -------------------------------------------
-# Configuration
+# Model setup
 # -------------------------------------------
-CONTAINER_ID = os.getenv("HOSTNAME", socket.gethostname())
-CONTAINER_NAME = os.getenv("K8S_POD_NAME", CONTAINER_ID)
-print(f"Container ID: {CONTAINER_ID}, Container Name: {CONTAINER_NAME}")
-
-# -------------------------------------------
-# Model loading
-# -------------------------------------------
-MODEL_NAME = "microsoft/resnet-50"
-processor = AutoImageProcessor.from_pretrained(MODEL_NAME, use_fast=True)
-model = ResNetForImageClassification.from_pretrained(MODEL_NAME)
-model.eval()
-id2label = model.config.id2label
+ai_model_endpoint_spec = {
+    "model_input_form_spec": None,
+    "model_output_json_spec": None,
+    "profile_output_json_spec": None,
+}
 
 
 # -------------------------------------------
-# Logger setup
+# App Lifespan setup
 # -------------------------------------------
-logger = Logger(
-    container_id=CONTAINER_ID,
-    container_name=CONTAINER_NAME,
-    model_name=MODEL_NAME,
-)
+# Record the script start time (when uvicorn starts the process)
+SCRIPT_START_TIME = time.time()
+INITIALIZATION_DURATION = 0.0
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+
+    global INITIALIZATION_DURATION
+    global SCRIPT_START_TIME
+    global ai_model_endpoint_spec
+
+    # Load the AI model
+    print("Loading AI model...")
+    from model import (
+        MODEL_INPUT_FORM_SPEC,
+        MODEL_OUTPUT_JSON_SPEC,
+        PROFILE_OUTPUT_JSON_SPEC,
+        router as model_router,
+    )
+
+    ai_model_endpoint_spec["model_input_form_spec"] = MODEL_INPUT_FORM_SPEC
+    ai_model_endpoint_spec["model_output_json_spec"] = MODEL_OUTPUT_JSON_SPEC
+    ai_model_endpoint_spec["profile_output_json_spec"] = PROFILE_OUTPUT_JSON_SPEC
+
+    app.include_router(model_router, prefix="/model", tags=["AI Model"])
+
+    # Record the initialization duration
+    INITIALIZATION_DURATION = time.time() - SCRIPT_START_TIME
+
+    print(f"AI model loaded in {INITIALIZATION_DURATION:.2f} seconds.")
+
+    yield
+
+    # Clean up the models and release the resources
+    ai_model_endpoint_spec.clear()
 
 
 # -------------------------------------------
 # FastAPI application setup
 # -------------------------------------------
-app = FastAPI()
-
-
-@app.post("/run")
-async def run_model(file: UploadFile = File(...), ue_id: str = Form(...)):
-    if ue_id is None:
-        return JSONResponse(
-            content={"error": "UE_ID is required."},
-            status_code=400,
-        )
-
-    try:
-        start_time = time.time()
-        input_bytes = await file.read()
-        input_size = len(input_bytes)
-
-        # Process the input image
-        image = Image.open(file.file).convert("RGB")
-        inputs = processor(images=image, return_tensors="pt")
-
-        # Perform inference
-        with torch.no_grad():
-            outputs = model(**inputs)
-        logits = outputs.logits
-        probabilities = torch.nn.functional.softmax(logits[0], dim=0)
-
-        # Return the top 5 predictions with labels
-        top5_prob, top5_catid = torch.topk(probabilities, 5)
-        predictions = []
-        for i in range(top5_prob.size(0)):
-            category_id = top5_catid[i].item()
-            predictions.append(
-                {
-                    "category_id": category_id,
-                    "label": id2label[category_id],
-                    "probability": top5_prob[i].item(),
-                }
-            )
-
-        execution_duration = time.time() - start_time
-
-        logger.add_ue_run_log(
-            ue_id=ue_id,
-            input_size=input_size,
-            execution_duration=execution_duration,
-        )
-
-        return JSONResponse(
-            content={
-                "ue_id": ue_id,
-                "predictions": predictions,
-                "execution_duration": execution_duration,
-            }
-        )
-    except Exception as e:
-        print(f"Error processing file: {e}")
-        return JSONResponse(
-            content={"error": "Failed to process the image. {e}".format(e=str(e))},
-            status_code=500,
-        )
+app = FastAPI(lifespan=lifespan)
 
 
 @app.get("/get_ue_log")
 def get_log(ue_id: str):
     # Retrieve logs for the specified UE_ID
+    logger = Logger.get_instance()
+    if logger is None:
+        return JSONResponse(
+            content={"error": "Logger not initialized."},
+            status_code=500,
+        )
+
     log_data = logger.get_ue_run_log(ue_id=ue_id)
     if log_data is None:
         return JSONResponse(
@@ -114,20 +80,55 @@ def get_log(ue_id: str):
     return JSONResponse(content=log_data)
 
 
+@app.get("/initialization_duration")
+def get_initialization_duration():
+    """
+    Endpoint to retrieve the initialization duration of the AI model.
+    """
+    global INITIALIZATION_DURATION
+
+    if INITIALIZATION_DURATION == 0.0:
+        return JSONResponse(
+            content={"error": "Model not initialized."},
+            status_code=500,
+        )
+    return JSONResponse(
+        content={
+            "initialization_duration": INITIALIZATION_DURATION,
+            "script_start_time": SCRIPT_START_TIME,
+        }
+    )
+
+
 @app.get("/help")
 def get_help():
+    global ai_model_endpoint_spec
     return {
         "endpoints": {
-            "/run": {
+            "/model/run": {
                 "method": "POST",
-                "description": "Accepts an image file and a UE_ID, processes the image using the AI model, and returns the top 5 predictions.",
+                "description": "Executes the AI model with the provided input data.",
                 "parameters": {
-                    "file": "Image file to be processed (JPEG or PNG).",
-                    "ue_id": "User Equipment ID (string) to identify the user.",
+                    "ue_id": "User Equipment ID (string) for tracking the request.",
+                    **ai_model_endpoint_spec["model_input_form_spec"],
                 },
                 "response": {
-                    "predictions": "List of top 5 predictions with category IDs, labels, and probabilities.",
-                    "execution_duration": "Time taken to process the image and generate predictions (in seconds).",
+                    "ue_id": "User Equipment ID (string) for tracking the request.",
+                    "execution_duration": "Time taken to execute the model (in seconds).",
+                    **ai_model_endpoint_spec["model_output_json_spec"],
+                },
+            },
+            "/model/profile": {
+                "method": "POST",
+                "description": "Profiles the AI model execution.",
+                "parameters": {
+                    "ue_id": "User Equipment ID (string) for tracking the request.",
+                    **ai_model_endpoint_spec["model_input_form_spec"],
+                },
+                "response": {
+                    "ue_id": "User Equipment ID (string) for tracking the request.",
+                    "profile_results": "Profiling results of the AI model execution.",
+                    **ai_model_endpoint_spec["profile_output_json_spec"],
                 },
             },
             "/get_ue_log": {
@@ -137,8 +138,8 @@ def get_help():
                     "ue_id": "User Equipment ID (string) to retrieve logs for."
                 },
                 "response": {
-                    "container_id": "ID of the container running the model.",
-                    "container_name": "Name of the container running the model.",
+                    "node_id": "Name of the computation node running the model.",
+                    "k8s_pod_name": "Name of the Kubernetes pod running the model.",
                     "model_name": "Name of the AI model.",
                     "ue_id": "User Equipment ID (string) for which logs are retrieved.",
                     "total_input_size": "Total size of input data processed for the UE_ID (in bytes).",
@@ -153,5 +154,13 @@ def get_help():
                     },
                 },
             },
+            "/initialization_duration": {
+                "method": "GET",
+                "description": "Retrieves the initialization duration of the AI model.",
+                "response": {
+                    "initialization_duration": "Time taken to initialize the model (in seconds).",
+                    "script_start_time": "Timestamp when the script started (in seconds since epoch).",
+                },
+            }
         }
     }

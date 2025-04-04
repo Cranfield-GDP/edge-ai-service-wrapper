@@ -1,26 +1,23 @@
 from pydantic import BaseModel
-from typing import List, Optional, Dict
+from typing import List, Optional
 
 
 class ResourceProfile(BaseModel):
-    cpu_time_ms: int
-    cuda_time_ms: int
-    xpu_time_ms: int
-    mtia_time_ms: int
-    ram_usage_MB: int
-    vram_usage_MB: int
-    energy_consumption_execution: int
-    energy_consumption_idle: int
-    disk_IO_MB: int
-    input_data_MB: int
-    output_data_MB: int
-    service_disk_size: int
+    cpu_time_ms: float
+    device_time_ms: float
+    cpu_memory_usage_MB: float
+    device_memory_usage_MB: float
+    energy_consumption_execution: float
+    energy_consumption_idle: float
+    disk_IO_MB: float
+    input_data_MB: float
+    output_data_MB: float
 
 
 class LatencyProfile(BaseModel):
-    initialization_time_ms: int
-    inference_time_ms: int
-    eviction_time_ms: int
+    initialization_time_ms: float
+    inference_time_ms: float
+    eviction_time_ms: float
 
 
 class BillingProfile(BaseModel):
@@ -34,6 +31,8 @@ class Profile(BaseModel):
     resource: ResourceProfile
     latency: LatencyProfile
     billing: BillingProfile
+    device_type: str
+    device_name: str
 
 
 class Feedback(BaseModel):
@@ -47,6 +46,10 @@ class Code(BaseModel):
     dockerfile_content: str
     ai_server_script_content: str
     ai_client_script_content: str
+    ai_client_utils_script_content: Optional[str]
+    model_script_content: Optional[str]
+    healthcheck_script_content: Optional[str]
+    logger_script_content: Optional[str]
 
 
 class AIService(BaseModel):

@@ -2,6 +2,8 @@ services:
 
   mongodb:
     image: mongodb/mongodb-atlas-local
+    container_name: mongodb
+    restart: always
     environment:
       - MONGODB_INITDB_ROOT_USERNAME=user
       - MONGODB_INITDB_ROOT_PASSWORD=pass

@@ -6,6 +6,7 @@ from utils import (
     get_docker_container_run_name,
     get_docker_image_build_name,
     get_hf_model_directory,
+    get_node_hostname,
     update_service_disk_size,
     validate_hf_model_name,
 )
@@ -39,7 +40,7 @@ def build_and_start_docker_container(huggingface_model_name: str) -> None:
     )
     print(f"Docker image {docker_image_build_name} built successfully.")
 
-    # --------------------------------
+    # ----------------------------------
     # Save the disk size of the built docker image
     # ----------------------------------
     docker_image_size_bytes = subprocess.run(
@@ -57,6 +58,7 @@ def build_and_start_docker_container(huggingface_model_name: str) -> None:
     # Run the docker container
     # ---------------------------------
     available_port = get_available_port()
+    profile_node_id = get_node_hostname()
     subprocess.run(
         [
             "docker",
@@ -64,6 +66,8 @@ def build_and_start_docker_container(huggingface_model_name: str) -> None:
             "-d",
             "--name",
             get_docker_container_run_name(huggingface_model_name),
+            "--env",
+            f"NODE_ID={profile_node_id}",
             "-p",
             f"{available_port}:8000",
             "--health-cmd",

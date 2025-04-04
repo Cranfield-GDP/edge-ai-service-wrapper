@@ -113,12 +113,12 @@ async def profile_service(file: UploadFile = File(...), ue_id: str = Form(...)):
         with profile(
             activities=profile_activities,
             profile_memory=True,
-            record_shapes=True,
+            # record_shapes=True,
         ) as prof:
             with record_function("model_inference"):
                 # Run the model
-                # with torch.no_grad():
-                outputs = model(**inputs)
+                with torch.no_grad():
+                    outputs = model(**inputs)
 
         logits = outputs.logits
         probabilities = torch.nn.functional.softmax(logits[0], dim=0)
@@ -148,10 +148,10 @@ async def profile_service(file: UploadFile = File(...), ue_id: str = Form(...)):
             "name": profile_event.key,
             "device_type": str(profile_event.device_type),
             "device_name": str(profile_event.use_device),
-            "cpu_memory_usage": profile_event.cpu_memory_usage,
-            "self_cpu_memory_usage": profile_event.self_cpu_memory_usage,
-            "device_memory_usage": profile_event.device_memory_usage,
-            "self_device_memory_usage": profile_event.self_device_memory_usage,
+            "cpu_memory_usage": max([abs(e.cpu_memory_usage) for e in prof.key_averages()]),
+            "self_cpu_memory_usage": max([abs(e.self_cpu_memory_usage) for e in prof.key_averages()]),
+            "device_memory_usage": max([abs(e.device_memory_usage) for e in prof.key_averages()]),
+            "self_device_memory_usage": max([abs(e.self_device_memory_usage) for e in prof.key_averages()]),
             "cpu_time_total": profile_event.cpu_time_total,
             "self_cpu_time_total": profile_event.self_cpu_time_total,
             "device_time_total": profile_event.device_time_total,
@@ -161,8 +161,8 @@ async def profile_service(file: UploadFile = File(...), ue_id: str = Form(...)):
         return JSONResponse(
             content={
                 "ue_id": ue_id,
-                "container_id": logger.container_id,
-                "container_name": logger.container_name,
+                "node_id": logger.node_id,
+                "k8s_pod_name": logger.k8s_pod_name,
                 "profile_result": profile_result,
                 "ai_result": predictions,
                 "execution_duration": execution_duration,

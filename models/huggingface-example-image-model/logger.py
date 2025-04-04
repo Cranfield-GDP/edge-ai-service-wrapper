@@ -6,9 +6,9 @@ import time
 # -------------------------------------------
 # Configuration
 # -------------------------------------------
-CONTAINER_ID = os.getenv("HOSTNAME", socket.gethostname())
-CONTAINER_NAME = os.getenv("K8S_POD_NAME", "localhost")
-print(f"Container ID: {CONTAINER_ID}, Container Name: {CONTAINER_NAME}")
+NODE_ID = os.getenv("NODE_ID", socket.gethostname())
+K8S_POD_NAME = os.getenv("K8S_POD_NAME", "UNKNOWN")
+print(f"Node ID: {NODE_ID}, K8S_POD_NAME: {K8S_POD_NAME}")
 
 
 class Logger:
@@ -32,13 +32,13 @@ class Logger:
                     cls._instance = super(Logger, cls).__new__(cls)
         return cls._instance
 
-    def __init__(self, model_name, container_id=CONTAINER_ID, container_name=CONTAINER_NAME):
+    def __init__(self, model_name, node_id=NODE_ID, k8s_pod_name=K8S_POD_NAME):
         """Initialize the Logger instance."""
         # Avoid reinitializing if the instance already exists
         if not hasattr(self, "initialized"):
             self.model_name = model_name
-            self.container_id = container_id
-            self.container_name = container_name
+            self.node_id = node_id
+            self.k8s_pod_name = k8s_pod_name
             self.ue_logs = {}
             self.lock = Lock()
             self.initialized = True  # Mark the instance as initialized
@@ -73,8 +73,8 @@ class Logger:
             if ue_id not in self.ue_logs:
                 return None
             return {
-                "container_id": self.container_id,
-                "container_name": self.container_name,
+                "node_id": self.node_id,
+                "k8s_pod_name": self.k8s_pod_name,
                 "model_name": self.model_name,
                 "ue_id": ue_id,
                 "total_input_size": self.ue_logs[ue_id]["total_input_size"],

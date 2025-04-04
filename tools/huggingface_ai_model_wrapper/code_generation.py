@@ -3,15 +3,17 @@ import shutil
 from dotenv import load_dotenv
 from utils import (
     TARGET_FILES_TO_GENERATE,
+    copy_ai_client_utils_script,
     copy_healthcheck_script,
     copy_logger_script,
-    prepare_service_data_json,
+    download_model_readme,
     generate_ai_client_script,
-    generate_ai_server_script,
+    generate_model_script,
     generate_dockerfile,
     get_hf_model_directory,
     get_hf_model_readme,
     validate_hf_model_name,
+    copy_ai_server_script,
 )
 
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", "..", ".env"))
@@ -38,10 +40,10 @@ def code_generation_main(huggingface_model_name: str) -> None:
         file_path = os.path.join(example_model_directory, file_name)
         assert os.path.exists(
             file_path
-        ), f"The example model file '{file_path}' does not exist."
+        ), f"The example file '{file_path}' does not exist."
         with open(file_path, "r") as file:
             example_model_files_content[file_name] = file.read()
-    print(f"The example model {example_model_name} is valid.")
+    print(f"The example {example_model_name} is valid.")
 
     # --------------------------------
     # prepare the model output directory
@@ -72,16 +74,38 @@ def code_generation_main(huggingface_model_name: str) -> None:
     print(f"Healthcheck file copied to {hf_model_directory}.")
 
     # --------------------------------
-    # Generating the AI server file
+    # Copy the ai_server.py file directly
     # --------------------------------
-    generate_ai_server_script(
+    copy_ai_server_script(
+        hf_model_directory, example_model_files_content, output_files_content
+    )
+    print(f"AI server file copied to {hf_model_directory}.")
+
+    # --------------------------------
+    # Copy the ai_client_utils.py file directly
+    # --------------------------------
+    copy_ai_client_utils_script(
+        hf_model_directory, example_model_files_content, output_files_content
+    )
+    print(f"AI client utils script copied to {hf_model_directory}.")
+
+    # --------------------------------
+    # Download the README file
+    # --------------------------------
+    download_model_readme(huggingface_model_name)
+    print(f"README file downloaded to {hf_model_directory}.")
+
+    # --------------------------------
+    # Generating the model.py file
+    # --------------------------------
+    generate_model_script(
         huggingface_model_name,
         huggingface_model_readme,
         example_model_files_content,
         output_files_content,
         hf_model_directory,
     )
-    print(f"AI server script generated and saved.")
+    print(f"AI model script generated and saved.")
 
     # --------------------------------
     # Generating the Dockerfile
@@ -106,13 +130,6 @@ def code_generation_main(huggingface_model_name: str) -> None:
         hf_model_directory,
     )
     print(f"AI client script generated and saved.")
-
-    # --------------------------------
-    # prepare the service_data json
-    # --------------------------------
-    prepare_service_data_json(huggingface_model_name)
-    print(f"service_data.json copied to {hf_model_directory}.")
-
 
 
 if __name__ == "__main__":

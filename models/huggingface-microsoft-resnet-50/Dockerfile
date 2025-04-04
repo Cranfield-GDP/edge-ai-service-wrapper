@@ -20,7 +20,8 @@ RUN pip install --no-cache-dir \
     python-multipart \
     Pillow \
     psutil \
-    requests
+    requests \
+    datasets
 
 # Stage 2: Final stage
 FROM python:3.12-slim

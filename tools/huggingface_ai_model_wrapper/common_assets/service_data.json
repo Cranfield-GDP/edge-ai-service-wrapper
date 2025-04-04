@@ -6,34 +6,7 @@
     "accuracy_info": "",
     "image_repository_url": "",
     "service_disk_size_bytes": 0,
-    "profiles":[
-        {
-            "node_id": "localhost",
-            "resource": {
-                "cpu_time_ms": 0,
-                "cuda_time_ms": 0,
-                "xpu_time_ms": 0,
-                "mtia_time_ms": 0,
-                "ram_usage_MB": 0,
-                "vram_usage_MB": 0,
-                "energy_consumption_execution": 0,
-                "energy_consumption_idle": 0,
-                "disk_IO_MB": 0,
-                "input_data_MB": 0,
-                "output_data_MB": 0
-            },
-            "latency": {
-                "initialization_time_ms": 0,
-                "inference_time_ms": 0,
-                "eviction_time_ms": 0
-            },
-            "billing": {
-                "initialization_cost": 0,
-                "keep_alive_cost": 0,
-                "execution_cost": 0
-            }
-        }
-    ],
+    "profiles":[],
     "feedback": {
         "likes": [],
         "dislikes": [],
@@ -43,6 +16,10 @@
         "readme_content": "",
         "dockerfile_content": "",
         "ai_server_script_content": "",
-        "ai_client_script_content": ""
+        "ai_client_script_content": "",
+        "ai_client_utils_script_content": "",
+        "model_script_content": "",
+        "healthcheck_script_content": "",
+        "logger_script_content": ""
     }
 }

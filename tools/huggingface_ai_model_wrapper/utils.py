@@ -1,19 +1,26 @@
 import json
 import os
 import requests
+import socket
+from openai import OpenAI
 
 AI_SERVER_SCRIPT_NAME = "ai_server.py"
 AI_CLIENT_SCRIPT_NAME = "ai_client.py"
+AI_CLIENT_UTILS_SCRIPT_NAME = "ai_client_utils.py"
+MODEL_SCRIPT_NAME = "model.py"
 DOCKERFILE_NAME = "Dockerfile"
 LOGGER_SCRIPT_NAME = "logger.py"
 HEALTHCHECK_SCRIPT_NAME = "healthcheck.py"
+SERVICE_DATA_JSON_NAME = "service_data.json"
 
 TARGET_FILES_TO_GENERATE = [
     AI_SERVER_SCRIPT_NAME,
     AI_CLIENT_SCRIPT_NAME,
+    AI_CLIENT_UTILS_SCRIPT_NAME,
     DOCKERFILE_NAME,
     LOGGER_SCRIPT_NAME,
-    HEALTHCHECK_SCRIPT_NAME
+    HEALTHCHECK_SCRIPT_NAME,
+    MODEL_SCRIPT_NAME,
 ]
 
 
@@ -69,16 +76,34 @@ def copy_healthcheck_script(
         file.write(example_content[HEALTHCHECK_SCRIPT_NAME])
     output_files_content[HEALTHCHECK_SCRIPT_NAME] = example_content[HEALTHCHECK_SCRIPT_NAME]
 
+def copy_ai_server_script(
+    model_output_directory: str, example_content: dict, output_files_content: dict
+) -> None:
+    """Copy the ai_server.py file directly."""
+    server_file_path = os.path.join(model_output_directory, AI_SERVER_SCRIPT_NAME)
+    with open(server_file_path, "w") as file:
+        file.write(example_content[AI_SERVER_SCRIPT_NAME])
+    output_files_content[AI_SERVER_SCRIPT_NAME] = example_content[AI_SERVER_SCRIPT_NAME]
 
-def generate_ai_server_script(
+def copy_ai_client_utils_script(
+    model_output_directory: str, example_content: dict, output_files_content: dict
+) -> None:
+    """Copy the ai_client_utils.py file directly."""
+    client_utils_file_path = os.path.join(model_output_directory, AI_CLIENT_UTILS_SCRIPT_NAME)
+    with open(client_utils_file_path, "w") as file:
+        file.write(example_content[AI_CLIENT_UTILS_SCRIPT_NAME])
+    output_files_content[AI_CLIENT_UTILS_SCRIPT_NAME] = example_content[AI_CLIENT_UTILS_SCRIPT_NAME]
+
+
+def generate_model_script(
     model_name: str,
     model_readme,
     example_content: dict,
     output_files_content: dict,
     model_output_directory: str,
 ) -> None:
-    """Generate the AI server file."""
-    from openai import OpenAI
+    """Generate the AI model.py file."""
+
 
     client = OpenAI()
     completion = client.chat.completions.create(
@@ -86,33 +111,33 @@ def generate_ai_server_script(
         messages=[
             {
                 "role": "user",
-                "content": f"""Help me generate the fastAPI server script, serving the pre-trained hugging face model {model_name}.
+                "content": f"""Help me generate the fastAPI router script for the fastAPI service which serves the pre-trained hugging face model {model_name}.
 -----------------                
 Below is the README file of the hugging face model:
 {model_readme}
 
 -----------------
-Below is an example server script content for your reference:
-{example_content[AI_SERVER_SCRIPT_NAME]}
+Below is an example model script content for your reference:
+{example_content[MODEL_SCRIPT_NAME]}
 
 -----------------
 Requirements:
-- follow the same endpoint design as the example server script.
-- log each request in the same way as the example server script.
+- follow the same endpoint design as the example model script.
+- log each request in the same way as the example model script.
 - if the AI model output binary content such as images, return the binary content in the response instead of saving it locally.
-- Output only the raw content of the server script, without any additional text or explanation. 
+- Output only the raw content of the model script, without any additional text or explanation. 
 - Do not wrap the output inside the ```python``` code block.""",
             }
         ],
         temperature=0.2,
     )
 
-    ai_server_content = completion.choices[0].message.content
-    print(ai_server_content)
+    model_script_content = completion.choices[0].message.content
+    print(model_script_content)
 
-    with open(os.path.join(model_output_directory, AI_SERVER_SCRIPT_NAME), "w") as file:
-        file.write(ai_server_content)
-    output_files_content[AI_SERVER_SCRIPT_NAME] = ai_server_content
+    with open(os.path.join(model_output_directory, MODEL_SCRIPT_NAME), "w") as file:
+        file.write(model_script_content)
+    output_files_content[MODEL_SCRIPT_NAME] = model_script_content
 
 
 def generate_dockerfile(
@@ -123,8 +148,6 @@ def generate_dockerfile(
     model_output_directory: str,
 ) -> None:
     """Generate the Dockerfile."""
-    from openai import OpenAI
-
     client = OpenAI()
     completion = client.chat.completions.create(
         model="gpt-4o",
@@ -172,8 +195,6 @@ def generate_ai_client_script(
     model_output_directory: str,
 ) -> None:
     """Generate the AI client file."""
-    from openai import OpenAI
-
     client = OpenAI()
     completion = client.chat.completions.create(
         model="gpt-4o",
@@ -187,8 +208,8 @@ Below is the README file of the hugging face model:
 {model_readme}
 
 ------------------
-Below is the content of the `ai_server.py`
-{example_content[AI_SERVER_SCRIPT_NAME]}
+Below is the content of the `model.py`
+{example_content[MODEL_SCRIPT_NAME]}
 
 -------------------
 Below is an example client script (for a image processing AI service) for your reference:
@@ -196,8 +217,8 @@ Below is an example client script (for a image processing AI service) for your r
 
 --------------------
 Requirements:
-- follow similar commandl line interface design as the example client script.
-- test all the endpoints defined in the server script.
+- follow similar command line interface design as the example client script.
+- use the ProfileResultProcessor class and url getter utils the same way as the example client script.
 - If the AI model outputs binary content such as images, save the binary content to a file and print the save path.
 - Do not run AI model in the client script.
 - output only the raw content of the client script, without any additional text or explanation.
@@ -217,14 +238,16 @@ Requirements:
 
 def get_available_port() -> int:
     """Get an available port."""
-    import socket
-
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.bind(("", 0))
     port = sock.getsockname()[1]
     sock.close()
     return port
 
+def get_node_hostname() -> str:
+    """Get the hostname of the node."""
+    hostname = socket.gethostname()
+    return hostname
 
 def get_docker_image_build_name(model_name: str) -> str:
     """Get the docker image build name."""
@@ -246,6 +269,70 @@ def download_model_readme(model_name: str) -> str:
         return readme_file_path
     else:
         raise Exception(f"Failed to download the README file for model {model_name}.")
+
+def draft_model_task_detail(
+    model_name: str,
+    model_readme,
+) -> str:
+    """Let LLM to draft the task detail based on model's readme content, for better semantic searching."""
+    client = OpenAI()
+    completion = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {
+                "role": "user",
+                "content": f"""Help me write a detailed functionality description for pre-trained AI model ({model_name}).
+
+-----------------
+Below is the README file of the hugging face AI model:
+{model_readme}
+
+--------------------
+Requirements:
+- describe in detail the functionality of the AI model. For example, if the model is for image classification, you should describe the types of images it can classify, the expected input format, and the output format.
+- write the description such that the content is suitable for embedding and semantic searching against potential use case scenarios. 
+- output the content of the description only.
+""",
+            }
+        ],
+    )
+
+    task_detail_content = completion.choices[0].message.content
+    print(task_detail_content)
+    return task_detail_content
+
+
+def draft_model_accuracy_info(
+    model_name: str,
+    model_readme,
+) -> str:
+    """Let LLM to draft the accuracy info based on model's readme content."""
+    client = OpenAI()
+    completion = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {
+                "role": "user",
+                "content": f"""Help me extract any information about the (accuracy) performance for a pre-trained AI model ({model_name}) based on its README.
+
+-----------------
+Below is the README file of the hugging face AI model:
+{model_readme}
+
+--------------------
+Requirements:
+- if there are descriptions about the model's performance (accuracy), please describe them in natural language.
+- if there are no such descriptions, just output "No accuracy information found."
+- output the content of the description only.
+""",
+            }
+        ],
+    )
+
+    acc_info_content = completion.choices[0].message.content
+    print(acc_info_content)
+    return acc_info_content
+
 
 def prepare_service_data_json(model_name: str) -> str:
     """Copy a service_data.json for the model."""
@@ -270,11 +357,14 @@ def prepare_service_data_json(model_name: str) -> str:
 
     service_data_json["model_name"] = model_name
     service_data_json["model_url"] = f"https://huggingface.co/{model_name}"
-    service_data_json["functionality"]["task"] = get_model_pipeline_tag(model_name)
-    # TODO: add support for extracting accuracy info
-    # TODO: add support for revised task detail based on readme content.
+    service_data_json["task"] = get_model_pipeline_tag(model_name)
 
-    service_data_json["code"]["readme_content"] = get_hf_model_readme(model_name)
+    model_readme = get_hf_model_readme(model_name)
+
+    service_data_json["task_detail"] = draft_model_task_detail(model_name=model_name, model_readme=model_readme)
+    service_data_json["accuracy_info"] = draft_model_accuracy_info(model_name=model_name, model_readme=model_readme)
+
+    service_data_json["code"]["readme_content"] = model_readme
     service_data_json["code"]["dockerfile_content"] = open(
         os.path.join(get_hf_model_directory(model_name), DOCKERFILE_NAME), "r"
     ).read()
@@ -284,7 +374,19 @@ def prepare_service_data_json(model_name: str) -> str:
     service_data_json["code"]["ai_client_script_content"] = open(
         os.path.join(get_hf_model_directory(model_name), AI_CLIENT_SCRIPT_NAME), "r"
     ).read()
-
+    service_data_json["code"]["ai_client_utils_script_content"] = open(
+        os.path.join(get_hf_model_directory(model_name), AI_CLIENT_UTILS_SCRIPT_NAME), "r"
+    ).read()
+    service_data_json["code"]["model_script_content"] = open(
+        os.path.join(get_hf_model_directory(model_name), MODEL_SCRIPT_NAME), "r"
+    ).read()
+    service_data_json["code"]["healthcheck_script_content"] = open(
+        os.path.join(get_hf_model_directory(model_name), HEALTHCHECK_SCRIPT_NAME), "r"
+    ).read()
+    service_data_json["code"]["logger_script_content"] = open(
+        os.path.join(get_hf_model_directory(model_name), LOGGER_SCRIPT_NAME), "r"
+    ).read()
+       
     with open(output_path, "w") as dest_file:
         dest_file.write(json.dumps(service_data_json, indent=4))
 
@@ -383,7 +485,7 @@ def validate_image_repository(model_name: str) -> bool:
         return False
 
 
-def update_edge_ai_service_db(model_name: str) -> None:
+def update_ai_service_db(model_name: str) -> None:
     """Update the edge AI service database."""
 
     # validate the model name
@@ -394,35 +496,18 @@ def update_edge_ai_service_db(model_name: str) -> None:
     assert validate_image_repository(
         model_name
     ), f"Invalid image repository: {model_name}. Make sure you have successfully pushed the image to the repository."
-    print(f"Image repository {model_name} is valid.")
+    print(f"Image repository {model_name} is valid.")   
 
-    duration_per_run = input("Enter the duration per run (in seconds): ")
-    cpu_usage = input("Enter the CPU usage under pressure testing (in percentage): ")
-    ram_usage = input("Enter the RAM usage under pressure testing (in MB): ")
-    gpu_usage = input("Enter the GPU usage under pressure testing (in MB): ")
-    image_disk_size = input("Enter the image disk size (in GB): ")
+    hf_model_directory = get_hf_model_directory(model_name)
+    service_data_json_path = os.path.join(
+        hf_model_directory, SERVICE_DATA_JSON_NAME
+    )
+    assert os.path.exists(
+        service_data_json_path
+    ), f"Service data json file not found: {service_data_json_path}"
 
-    ai_service_data = {
-        "model_name": model_name,
-        "model_url": f"https://huggingface.co/{model_name}",
-        "image_repository_url": get_image_repository_full_url(model_name),
-        "task": get_model_pipeline_tag(model_name),
-        "readme_content": get_hf_model_readme(model_name),
-        "ai_server_script_content": open(
-            os.path.join(get_hf_model_directory(model_name), AI_SERVER_SCRIPT_NAME), "r"
-        ).read(),
-        "ai_client_script_content": open(
-            os.path.join(get_hf_model_directory(model_name), AI_CLIENT_SCRIPT_NAME), "r"
-        ).read(),
-        "dockerfile_content": open(
-            os.path.join(get_hf_model_directory(model_name), DOCKERFILE_NAME), "r"
-        ).read(),
-        "duration_per_run": duration_per_run,
-        "image_disk_size": image_disk_size,
-        "cpu_usage": cpu_usage,
-        "ram_usage": ram_usage,
-        "gpu_usage": gpu_usage,
-    }
+    with open(service_data_json_path, "r") as file:
+        service_data_json = json.load(file)
 
     # check if the AI service already exists in the database
     url = "http://localhost:8000/ai-services/"
@@ -437,7 +522,7 @@ def update_edge_ai_service_db(model_name: str) -> None:
         # use put instead of post to update the existing service
         service_id = existing_service["id"]
         url = f"http://localhost:8000/ai-service/{service_id}"
-        response = requests.put(url, json=ai_service_data)
+        response = requests.put(url, json=service_data_json)
         if response.status_code == 200:
             print("AI service updated successfully.")
         else:
@@ -445,7 +530,7 @@ def update_edge_ai_service_db(model_name: str) -> None:
     else:
         # create a new service
         url = "http://localhost:8000/ai-services/"
-        response = requests.post(url, json=ai_service_data)
+        response = requests.post(url, json=service_data_json)
         if response.status_code == 201:
             print("AI service created successfully.")
         else:
