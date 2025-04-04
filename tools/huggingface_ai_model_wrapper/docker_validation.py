@@ -6,8 +6,10 @@ from utils import (
     get_docker_container_run_name,
     get_docker_image_build_name,
     get_hf_model_directory,
+    update_service_disk_size,
     validate_hf_model_name,
 )
+
 
 def build_and_start_docker_container(huggingface_model_name: str) -> None:
     # --------------------------------
@@ -29,12 +31,27 @@ def build_and_start_docker_container(huggingface_model_name: str) -> None:
     # --------------------------------
     # Build the docker image
     # ---------------------------------
+    docker_image_build_name = get_docker_image_build_name(huggingface_model_name)
     subprocess.run(
-        ["docker", "build", "-t", get_docker_image_build_name(huggingface_model_name), "."],
+        ["docker", "build", "-t", docker_image_build_name, "."],
         cwd=hf_model_directory,
         check=True,
     )
-    print(f"Docker image {get_docker_image_build_name(huggingface_model_name)} built successfully.")
+    print(f"Docker image {docker_image_build_name} built successfully.")
+
+    # --------------------------------
+    # Save the disk size of the built docker image
+    # ----------------------------------
+    docker_image_size_bytes = subprocess.run(
+        ["docker", "image", "inspect", docker_image_build_name, "--format={{.Size}}"],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.strip()
+    update_service_disk_size(
+        huggingface_model_name,
+        int(docker_image_size_bytes),
+    )
 
     # --------------------------------
     # Run the docker container
@@ -49,7 +66,8 @@ def build_and_start_docker_container(huggingface_model_name: str) -> None:
             get_docker_container_run_name(huggingface_model_name),
             "-p",
             f"{available_port}:8000",
-            "--health-cmd", "python healthcheck.py",
+            "--health-cmd",
+            "python healthcheck.py",
             "--health-interval=5s",
             "--health-timeout=2s",
             "--health-retries=3",
@@ -57,8 +75,11 @@ def build_and_start_docker_container(huggingface_model_name: str) -> None:
         ],
         check=True,
     )
-    print(f"Docker container {get_docker_container_run_name(huggingface_model_name)}-server started successfully.")
+    print(
+        f"Docker container {get_docker_container_run_name(huggingface_model_name)}-server started successfully."
+    )
     print(f"Access the server at http://localhost:{available_port}/run")
+
 
 if __name__ == "__main__":
     # --------------------------------

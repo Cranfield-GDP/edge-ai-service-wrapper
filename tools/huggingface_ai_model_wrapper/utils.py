@@ -1,3 +1,4 @@
+import json
 import os
 import requests
 
@@ -50,7 +51,7 @@ def get_hf_model_readme(model_name: str) -> str:
         return ""
 
 
-def copy_logger_file(
+def copy_logger_script(
     model_output_directory: str, example_content: dict, output_files_content: dict
 ) -> None:
     """Copy the logger.py file directly."""
@@ -59,7 +60,7 @@ def copy_logger_file(
         file.write(example_content[LOGGER_SCRIPT_NAME])
     output_files_content[LOGGER_SCRIPT_NAME] = example_content[LOGGER_SCRIPT_NAME]
 
-def copy_healthcheck_file(
+def copy_healthcheck_script(
     model_output_directory: str, example_content: dict, output_files_content: dict
 ) -> None:
     """Copy the healthcheck.py file directly."""
@@ -246,6 +247,47 @@ def download_model_readme(model_name: str) -> str:
     else:
         raise Exception(f"Failed to download the README file for model {model_name}.")
 
+def prepare_service_data_json(model_name: str) -> str:
+    """Copy a service_data.json for the model."""
+    assert get_hf_model_directory(
+        model_name
+    ), f"Model directory not found for {model_name}."
+
+    service_data_file = "service_data.json"
+    output_path = os.path.join(
+        get_hf_model_directory(model_name), service_data_file
+    )
+
+    source_path = os.path.join(
+        os.path.dirname(__file__), "common_assets", service_data_file
+    )
+    assert os.path.exists(
+        source_path
+    ), f"Template json file not found: {source_path}"
+
+    with open(source_path, "rb") as source_file:
+        service_data_json = json.load(source_file)
+
+    service_data_json["model_name"] = model_name
+    service_data_json["model_url"] = f"https://huggingface.co/{model_name}"
+    service_data_json["functionality"]["task"] = get_model_pipeline_tag(model_name)
+    # TODO: add support for extracting accuracy info
+    # TODO: add support for revised task detail based on readme content.
+
+    service_data_json["code"]["readme_content"] = get_hf_model_readme(model_name)
+    service_data_json["code"]["dockerfile_content"] = open(
+        os.path.join(get_hf_model_directory(model_name), DOCKERFILE_NAME), "r"
+    ).read()
+    service_data_json["code"]["ai_server_script_content"] = open(
+        os.path.join(get_hf_model_directory(model_name), AI_SERVER_SCRIPT_NAME), "r"
+    ).read()
+    service_data_json["code"]["ai_client_script_content"] = open(
+        os.path.join(get_hf_model_directory(model_name), AI_CLIENT_SCRIPT_NAME), "r"
+    ).read()
+
+    with open(output_path, "w") as dest_file:
+        dest_file.write(json.dumps(service_data_json, indent=4))
+
 
 def copy_test_image(model_name: str) -> str:
     """Copy a test image for the model."""
@@ -259,7 +301,30 @@ def copy_test_image(model_name: str) -> str:
     )
 
     test_image_source_path = os.path.join(
-        os.path.dirname(__file__), "test_assets", test_image_file
+        os.path.dirname(__file__), "common_assets", test_image_file
+    )
+    assert os.path.exists(
+        test_image_source_path
+    ), f"Test image not found: {test_image_source_path}"
+
+    with open(test_image_source_path, "rb") as source_file:
+        with open(test_image_output_path, "wb") as dest_file:
+            dest_file.write(source_file.read())
+
+
+def copy_(model_name: str) -> str:
+    """Copy a test image for the model."""
+    assert get_hf_model_directory(
+        model_name
+    ), f"Model directory not found for {model_name}."
+
+    test_image_file = "puppy.png"
+    test_image_output_path = os.path.join(
+        get_hf_model_directory(model_name), test_image_file
+    )
+
+    test_image_source_path = os.path.join(
+        os.path.dirname(__file__), "common_assets", test_image_file
     )
     assert os.path.exists(
         test_image_source_path
@@ -337,7 +402,7 @@ def update_edge_ai_service_db(model_name: str) -> None:
     gpu_usage = input("Enter the GPU usage under pressure testing (in MB): ")
     image_disk_size = input("Enter the image disk size (in GB): ")
 
-    ai_service_image_data = {
+    ai_service_data = {
         "model_name": model_name,
         "model_url": f"https://huggingface.co/{model_name}",
         "image_repository_url": get_image_repository_full_url(model_name),
@@ -359,29 +424,43 @@ def update_edge_ai_service_db(model_name: str) -> None:
         "gpu_usage": gpu_usage,
     }
 
-    # check if the AI service image already exists in the database
-    url = "http://localhost:8000/ai-service-images/"
+    # check if the AI service already exists in the database
+    url = "http://localhost:8000/ai-services/"
     response = requests.get(url, params={"model_name": model_name})
-    assert response.status_code == 200, f"Error fetching AI service images: {response.status_code}, {response.text}"
+    assert response.status_code == 200, f"Error fetching AI services: {response.status_code}, {response.text}"
 
-    existing_images = response.json()
-    assert len(existing_images) <= 1, f"Multiple images found for model {model_name}."
-    if existing_images:
-        existing_image = existing_images[0]
+    existing_services = response.json()
+    assert len(existing_services) <= 1, f"Multiple services found for model {model_name}."
+    if existing_services:
+        existing_service = existing_services[0]
 
-        # use put instead of post to update the existing image
-        image_id = existing_image["id"]
-        url = f"http://localhost:8000/ai-service-images/{image_id}"
-        response = requests.put(url, json=ai_service_image_data)
+        # use put instead of post to update the existing service
+        service_id = existing_service["id"]
+        url = f"http://localhost:8000/ai-service/{service_id}"
+        response = requests.put(url, json=ai_service_data)
         if response.status_code == 200:
-            print("AI service image updated successfully.")
+            print("AI service updated successfully.")
         else:
-            print(f"Error updating AI service image: {response.status_code}, {response.text}")
+            print(f"Error updating AI service: {response.status_code}, {response.text}")
     else:
-        # create a new image
-        url = "http://localhost:8000/ai-service-images/"
-        response = requests.post(url, json=ai_service_image_data)
+        # create a new service
+        url = "http://localhost:8000/ai-services/"
+        response = requests.post(url, json=ai_service_data)
         if response.status_code == 201:
-            print("AI service image created successfully.")
+            print("AI service created successfully.")
         else:
-            print(f"Error creating AI service image: {response.status_code}, {response.text}")
+            print(f"Error creating AI service: {response.status_code}, {response.text}")
+
+
+def update_service_disk_size(model_name: str, size_in_bytes: int):
+    service_data_json_file = os.path.join(
+        get_hf_model_directory(model_name), "service_data.json"
+    )
+    with open(service_data_json_file, "r") as file:
+        service_data = json.load(file)
+        service_data["service_disk_size_bytes"] = size_in_bytes
+    
+    with open(service_data_json_file, "w") as file:
+        json.dump(service_data, file, indent=4)
+    print(f"Service disk size updated to {size_in_bytes} Bytes.")
+        

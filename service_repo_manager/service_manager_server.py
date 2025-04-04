@@ -7,11 +7,11 @@ import os
 
 # Initialize FastAPI app with metadata for Swagger UI
 app = FastAPI(
-    title="Edge Manager API",
-    description="API for managing AI service images in the Edge Manager system. This includes creating, reading, updating, and deleting AI service images stored in MongoDB.",
+    title="AI Service Manager API",
+    description="API for managing AI services in the Manager system. This includes creating, reading, updating, and deleting AI service stored in MongoDB.",
     version="0.0.1",
     contact={
-        "name": "Edge Manager",
+        "name": "AI Service Manager",
         "email": "yun.tang@cranfield.ac.uk",
     },
     license_info={
@@ -32,28 +32,21 @@ def serialize_ai_service(doc):
     doc.pop("_id", None)  # Remove the MongoDB ObjectId field
     return doc
 
-# Create AI Service Image
-@app.post("/ai-service-images/", response_model=dict, status_code=201, tags=["AI Service Images"])
+# Create AI Service Record
+@app.post("/ai-services/", response_model=dict, status_code=201, tags=["AI Service"])
 async def create_ai_service(ai_service: AIService):
     """
-    Create a new AI Service Image.
-
-    - **model_name**: Name of the AI model.
-    - **task**: Task performed by the AI model (e.g., image classification, object detection).
-    - **docker_image**: Docker image name for the AI service.
+    Create a new AI Service.
     """
     result = collection.insert_one(ai_service.model_dump())
     created = collection.find_one({"_id": result.inserted_id})
     return serialize_ai_service(created)
 
-# Read all AI Service Images with optional filtering
-@app.get("/ai-service-images/", response_model=list, status_code=200, tags=["AI Service Images"])
+# Read all AI Service with optional filtering
+@app.get("/ai-services/", response_model=list, status_code=200, tags=["AI Service"])
 async def get_all_ai_services(model_name: Optional[str] = None, task: Optional[str] = None):
     """
-    Retrieve all AI Service Images with optional filtering.
-
-    - **model_name**: Filter by model name.
-    - **task**: Filter by task type.
+    Retrieve all AI Service with optional filtering.
     """
     query = {}
     if model_name:
@@ -61,48 +54,47 @@ async def get_all_ai_services(model_name: Optional[str] = None, task: Optional[s
     if task:
         query["task"] = task
 
-    images = collection.find(query)
-    return [serialize_ai_service(image) for image in images]
+    services = collection.find(query)
+    return [serialize_ai_service(s) for s in services]
 
-# Read a single AI Service Image by ID
-@app.get("/ai-service-images/{image_id}", response_model=dict, status_code=200, tags=["AI Service Images"])
-async def get_ai_service(image_id: str):
+# Read a single AI Service by ID
+@app.get("/ai-service/{service_id}", response_model=dict, status_code=200, tags=["AI Service"])
+async def get_ai_service(service_id: str):
     """
-    Retrieve a single AI Service Image by its ID.
+    Retrieve a single AI Service by its ID.
 
-    - **image_id**: The ID of the AI service image.
+    - **service_id**: The ID of the AI service.
     """
-    image = collection.find_one({"_id": ObjectId(image_id)})
-    if not image:
-        raise HTTPException(status_code=404, detail="AI Service Image not found")
-    return serialize_ai_service(image)
+    service = collection.find_one({"_id": ObjectId(service_id)})
+    if not service:
+        raise HTTPException(status_code=404, detail="AI Service not found")
+    return serialize_ai_service(service)
 
-# Update AI Service Image by ID
-@app.put("/ai-service-images/{image_id}", response_model=dict, status_code=200, tags=["AI Service Images"])
-async def update_ai_service(image_id: str, ai_service: AIServiceImage):
+# Update AI Service by ID
+@app.put("/ai-service/{service_id}", response_model=dict, status_code=200, tags=["AI Service"])
+async def update_ai_service(service_id: str, ai_service: AIService):
     """
-    Update an existing AI Service Image by its ID.
+    Update an existing AI Service by its ID.
 
-    - **image_id**: The ID of the AI service image.
-    - **ai_service**: The updated AI service image data.
+    - **service_id**: The ID of the AI service.
+    - **ai_service**: The updated AI service data.
     """
     result = collection.update_one(
-        {"_id": ObjectId(image_id)}, {"$set": ai_service.model_dump()}
+        {"_id": ObjectId(service_id)}, {"$set": ai_service.model_dump()}
     )
     if result.matched_count == 0:
-        raise HTTPException(status_code=404, detail="AI Service Image not found")
-    updated = collection.find_one({"_id": ObjectId(image_id)})
+        raise HTTPException(status_code=404, detail="AI Service not found")
+    updated = collection.find_one({"_id": ObjectId(service_id)})
     return serialize_ai_service(updated)
 
-# Delete AI Service Image by ID
-@app.delete("/ai-service-images/{image_id}", response_model=dict, status_code=200, tags=["AI Service Images"])
-async def delete_ai_service(image_id: str):
+# Delete AI Service by ID
+@app.delete("/ai-service/{service_id}", response_model=dict, status_code=200, tags=["AI Service"])
+async def delete_ai_service(service_id: str):
     """
-    Delete an AI Service Image by its ID.
-
-    - **image_id**: The ID of the AI service image.
+    Delete an AI Service by its ID.
+    - **service_id**: The ID of the AI service.
     """
-    result = collection.delete_one({"_id": ObjectId(image_id)})
+    result = collection.delete_one({"_id": ObjectId(service_id)})
     if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="AI Service Image not found")
-    return {"message": "AI Service Image deleted successfully"}
+        raise HTTPException(status_code=404, detail="AI Service not found")
+    return {"message": "AI Service deleted successfully"}

@@ -3,8 +3,9 @@ import shutil
 from dotenv import load_dotenv
 from utils import (
     TARGET_FILES_TO_GENERATE,
-    copy_healthcheck_file,
-    copy_logger_file,
+    copy_healthcheck_script,
+    copy_logger_script,
+    prepare_service_data_json,
     generate_ai_client_script,
     generate_ai_server_script,
     generate_dockerfile,
@@ -57,7 +58,7 @@ def code_generation_main(huggingface_model_name: str) -> None:
     # --------------------------------
     # Copy the logger.py file directly
     # --------------------------------
-    copy_logger_file(
+    copy_logger_script(
         hf_model_directory, example_model_files_content, output_files_content
     )
     print(f"Logger file copied to {hf_model_directory}.")
@@ -65,7 +66,7 @@ def code_generation_main(huggingface_model_name: str) -> None:
     # --------------------------------
     # Copy the healthcheck.py file directly
     # --------------------------------
-    copy_healthcheck_file(
+    copy_healthcheck_script(
         hf_model_directory, example_model_files_content, output_files_content
     )
     print(f"Healthcheck file copied to {hf_model_directory}.")
@@ -105,6 +106,13 @@ def code_generation_main(huggingface_model_name: str) -> None:
         hf_model_directory,
     )
     print(f"AI client script generated and saved.")
+
+    # --------------------------------
+    # prepare the service_data json
+    # --------------------------------
+    prepare_service_data_json(huggingface_model_name)
+    print(f"service_data.json copied to {hf_model_directory}.")
+
 
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
-import subprocess
 import sys
+import subprocess
 from code_generation import code_generation_main
 from docker_validation import build_and_start_docker_container
 from docker_image_upload import push_docker_image_main
