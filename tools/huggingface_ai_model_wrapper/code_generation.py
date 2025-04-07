@@ -2,10 +2,9 @@ import os
 import shutil
 from dotenv import load_dotenv
 from utils import (
-    TARGET_FILES_TO_GENERATE,
+    NECESSARY_SERVICE_FILE_LIST,
     copy_ai_client_utils_script,
     copy_healthcheck_script,
-    copy_logger_script,
     download_model_readme,
     generate_ai_client_script,
     generate_model_script,
@@ -36,7 +35,7 @@ def code_generation_main(huggingface_model_name: str) -> None:
     ), f"The example model directory '{example_model_directory}' does not exist."
 
     example_model_files_content = {}
-    for file_name in TARGET_FILES_TO_GENERATE:
+    for file_name in NECESSARY_SERVICE_FILE_LIST:
         file_path = os.path.join(example_model_directory, file_name)
         assert os.path.exists(
             file_path
@@ -57,13 +56,6 @@ def code_generation_main(huggingface_model_name: str) -> None:
     print(f"The model directory {hf_model_directory} is prepared.")
 
     output_files_content = {}
-    # --------------------------------
-    # Copy the logger.py file directly
-    # --------------------------------
-    copy_logger_script(
-        hf_model_directory, example_model_files_content, output_files_content
-    )
-    print(f"Logger file copied to {hf_model_directory}.")
 
     # --------------------------------
     # Copy the healthcheck.py file directly

@@ -49,7 +49,6 @@ class Code(BaseModel):
     ai_client_utils_script_content: Optional[str]
     model_script_content: Optional[str]
     healthcheck_script_content: Optional[str]
-    logger_script_content: Optional[str]
 
 
 class AIService(BaseModel):

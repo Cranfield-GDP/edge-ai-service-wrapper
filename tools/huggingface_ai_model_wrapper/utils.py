@@ -9,11 +9,12 @@ AI_SERVER_UTILS_SCRIPT_NAME = "ai_server_utils.py"
 AI_CLIENT_SCRIPT_NAME = "ai_client.py"
 AI_CLIENT_UTILS_SCRIPT_NAME = "ai_client_utils.py"
 MODEL_SCRIPT_NAME = "model.py"
+XAI_MODEL_SCRIPT_NAME = "xai_model.py"
 DOCKERFILE_NAME = "Dockerfile"
 HEALTHCHECK_SCRIPT_NAME = "healthcheck.py"
 SERVICE_DATA_JSON_NAME = "service_data.json"
 
-TARGET_FILES_TO_GENERATE = [
+NECESSARY_SERVICE_FILE_LIST = [
     AI_SERVER_SCRIPT_NAME,
     AI_CLIENT_SCRIPT_NAME,
     AI_CLIENT_UTILS_SCRIPT_NAME,
@@ -21,6 +22,8 @@ TARGET_FILES_TO_GENERATE = [
     DOCKERFILE_NAME,
     HEALTHCHECK_SCRIPT_NAME,
     MODEL_SCRIPT_NAME,
+    XAI_MODEL_SCRIPT_NAME,
+    SERVICE_DATA_JSON_NAME,
 ]
 
 
@@ -58,23 +61,19 @@ def get_hf_model_readme(model_name: str) -> str:
         return ""
 
 
-def copy_logger_script(
-    model_output_directory: str, example_content: dict, output_files_content: dict
-) -> None:
-    """Copy the logger.py file directly."""
-    logger_file_path = os.path.join(model_output_directory, LOGGER_SCRIPT_NAME)
-    with open(logger_file_path, "w") as file:
-        file.write(example_content[LOGGER_SCRIPT_NAME])
-    output_files_content[LOGGER_SCRIPT_NAME] = example_content[LOGGER_SCRIPT_NAME]
-
 def copy_healthcheck_script(
     model_output_directory: str, example_content: dict, output_files_content: dict
 ) -> None:
     """Copy the healthcheck.py file directly."""
-    healthcheck_file_path = os.path.join(model_output_directory, HEALTHCHECK_SCRIPT_NAME)
+    healthcheck_file_path = os.path.join(
+        model_output_directory, HEALTHCHECK_SCRIPT_NAME
+    )
     with open(healthcheck_file_path, "w") as file:
         file.write(example_content[HEALTHCHECK_SCRIPT_NAME])
-    output_files_content[HEALTHCHECK_SCRIPT_NAME] = example_content[HEALTHCHECK_SCRIPT_NAME]
+    output_files_content[HEALTHCHECK_SCRIPT_NAME] = example_content[
+        HEALTHCHECK_SCRIPT_NAME
+    ]
+
 
 def copy_ai_server_script(
     model_output_directory: str, example_content: dict, output_files_content: dict
@@ -85,14 +84,19 @@ def copy_ai_server_script(
         file.write(example_content[AI_SERVER_SCRIPT_NAME])
     output_files_content[AI_SERVER_SCRIPT_NAME] = example_content[AI_SERVER_SCRIPT_NAME]
 
+
 def copy_ai_client_utils_script(
     model_output_directory: str, example_content: dict, output_files_content: dict
 ) -> None:
     """Copy the ai_client_utils.py file directly."""
-    client_utils_file_path = os.path.join(model_output_directory, AI_CLIENT_UTILS_SCRIPT_NAME)
+    client_utils_file_path = os.path.join(
+        model_output_directory, AI_CLIENT_UTILS_SCRIPT_NAME
+    )
     with open(client_utils_file_path, "w") as file:
         file.write(example_content[AI_CLIENT_UTILS_SCRIPT_NAME])
-    output_files_content[AI_CLIENT_UTILS_SCRIPT_NAME] = example_content[AI_CLIENT_UTILS_SCRIPT_NAME]
+    output_files_content[AI_CLIENT_UTILS_SCRIPT_NAME] = example_content[
+        AI_CLIENT_UTILS_SCRIPT_NAME
+    ]
 
 
 def generate_model_script(
@@ -103,7 +107,6 @@ def generate_model_script(
     model_output_directory: str,
 ) -> None:
     """Generate the AI model.py file."""
-
 
     client = OpenAI()
     completion = client.chat.completions.create(
@@ -123,7 +126,6 @@ Below is an example model script content for your reference:
 -----------------
 Requirements:
 - follow the same endpoint design as the example model script.
-- log each request in the same way as the example model script.
 - if the AI model output binary content such as images, return the binary content in the response instead of saving it locally.
 - Output only the raw content of the model script, without any additional text or explanation. 
 - Do not wrap the output inside the ```python``` code block.""",
@@ -244,10 +246,12 @@ def get_available_port() -> int:
     sock.close()
     return port
 
+
 def get_node_hostname() -> str:
     """Get the hostname of the node."""
     hostname = socket.gethostname()
     return hostname
+
 
 def get_docker_image_build_name(model_name: str) -> str:
     """Get the docker image build name."""
@@ -269,6 +273,7 @@ def download_model_readme(model_name: str) -> str:
         return readme_file_path
     else:
         raise Exception(f"Failed to download the README file for model {model_name}.")
+
 
 def draft_model_task_detail(
     model_name: str,
@@ -341,16 +346,12 @@ def prepare_service_data_json(model_name: str) -> str:
     ), f"Model directory not found for {model_name}."
 
     service_data_file = "service_data.json"
-    output_path = os.path.join(
-        get_hf_model_directory(model_name), service_data_file
-    )
+    output_path = os.path.join(get_hf_model_directory(model_name), service_data_file)
 
     source_path = os.path.join(
         os.path.dirname(__file__), "common_assets", service_data_file
     )
-    assert os.path.exists(
-        source_path
-    ), f"Template json file not found: {source_path}"
+    assert os.path.exists(source_path), f"Template json file not found: {source_path}"
 
     with open(source_path, "rb") as source_file:
         service_data_json = json.load(source_file)
@@ -361,8 +362,12 @@ def prepare_service_data_json(model_name: str) -> str:
 
     model_readme = get_hf_model_readme(model_name)
 
-    service_data_json["task_detail"] = draft_model_task_detail(model_name=model_name, model_readme=model_readme)
-    service_data_json["accuracy_info"] = draft_model_accuracy_info(model_name=model_name, model_readme=model_readme)
+    service_data_json["task_detail"] = draft_model_task_detail(
+        model_name=model_name, model_readme=model_readme
+    )
+    service_data_json["accuracy_info"] = draft_model_accuracy_info(
+        model_name=model_name, model_readme=model_readme
+    )
 
     service_data_json["code"]["readme_content"] = model_readme
     service_data_json["code"]["dockerfile_content"] = open(
@@ -375,7 +380,8 @@ def prepare_service_data_json(model_name: str) -> str:
         os.path.join(get_hf_model_directory(model_name), AI_CLIENT_SCRIPT_NAME), "r"
     ).read()
     service_data_json["code"]["ai_client_utils_script_content"] = open(
-        os.path.join(get_hf_model_directory(model_name), AI_CLIENT_UTILS_SCRIPT_NAME), "r"
+        os.path.join(get_hf_model_directory(model_name), AI_CLIENT_UTILS_SCRIPT_NAME),
+        "r",
     ).read()
     service_data_json["code"]["model_script_content"] = open(
         os.path.join(get_hf_model_directory(model_name), MODEL_SCRIPT_NAME), "r"
@@ -383,10 +389,7 @@ def prepare_service_data_json(model_name: str) -> str:
     service_data_json["code"]["healthcheck_script_content"] = open(
         os.path.join(get_hf_model_directory(model_name), HEALTHCHECK_SCRIPT_NAME), "r"
     ).read()
-    service_data_json["code"]["logger_script_content"] = open(
-        os.path.join(get_hf_model_directory(model_name), LOGGER_SCRIPT_NAME), "r"
-    ).read()
-       
+
     with open(output_path, "w") as dest_file:
         dest_file.write(json.dumps(service_data_json, indent=4))
 
@@ -439,11 +442,14 @@ def copy_(model_name: str) -> str:
 
 def get_image_repository_name(model_name: str) -> str:
     """Get the name of the docker image."""
-    ai_service_image_name = get_docker_image_build_name(model_name).replace(":latest", "")
+    ai_service_image_name = get_docker_image_build_name(model_name).replace(
+        ":latest", ""
+    )
     docker_username = os.getenv("DOCKER_USERNAME")
     image_repository_name = f"{docker_username}/{ai_service_image_name}"
     image_repository_name = image_repository_name.replace(" ", "_")
     return image_repository_name
+
 
 def get_image_repository_full_url(model_name: str) -> str:
     """Get the full name of the docker image."""
@@ -468,7 +474,9 @@ def get_model_pipeline_tag(model_name: str) -> str:
 def validate_image_repository(model_name: str) -> bool:
     """Validate the image repository."""
     repository_name = get_image_repository_name(model_name)
-    docker_hub_repo_api_url = f"https://hub.docker.com/v2/repositories/{repository_name}"
+    docker_hub_repo_api_url = (
+        f"https://hub.docker.com/v2/repositories/{repository_name}"
+    )
     response = requests.get(docker_hub_repo_api_url)
     if response.status_code == 200:
         image_data = response.json()
@@ -496,12 +504,10 @@ def update_ai_service_db(model_name: str) -> None:
     assert validate_image_repository(
         model_name
     ), f"Invalid image repository: {model_name}. Make sure you have successfully pushed the image to the repository."
-    print(f"Image repository {model_name} is valid.")   
+    print(f"Image repository {model_name} is valid.")
 
     hf_model_directory = get_hf_model_directory(model_name)
-    service_data_json_path = os.path.join(
-        hf_model_directory, SERVICE_DATA_JSON_NAME
-    )
+    service_data_json_path = os.path.join(hf_model_directory, SERVICE_DATA_JSON_NAME)
     assert os.path.exists(
         service_data_json_path
     ), f"Service data json file not found: {service_data_json_path}"
@@ -512,10 +518,14 @@ def update_ai_service_db(model_name: str) -> None:
     # check if the AI service already exists in the database
     url = "http://localhost:8000/ai-services/"
     response = requests.get(url, params={"model_name": model_name})
-    assert response.status_code == 200, f"Error fetching AI services: {response.status_code}, {response.text}"
+    assert (
+        response.status_code == 200
+    ), f"Error fetching AI services: {response.status_code}, {response.text}"
 
     existing_services = response.json()
-    assert len(existing_services) <= 1, f"Multiple services found for model {model_name}."
+    assert (
+        len(existing_services) <= 1
+    ), f"Multiple services found for model {model_name}."
     if existing_services:
         existing_service = existing_services[0]
 
@@ -544,8 +554,7 @@ def update_service_disk_size(model_name: str, size_in_bytes: int):
     with open(service_data_json_file, "r") as file:
         service_data = json.load(file)
         service_data["service_disk_size_bytes"] = size_in_bytes
-    
+
     with open(service_data_json_file, "w") as file:
         json.dump(service_data, file, indent=4)
     print(f"Service disk size updated to {size_in_bytes} Bytes.")
-        

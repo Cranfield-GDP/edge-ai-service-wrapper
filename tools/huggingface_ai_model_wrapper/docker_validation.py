@@ -1,7 +1,7 @@
 import os
 import subprocess
 from utils import (
-    TARGET_FILES_TO_GENERATE,
+    NECESSARY_SERVICE_FILE_LIST,
     get_available_port,
     get_docker_container_run_name,
     get_docker_image_build_name,
@@ -22,7 +22,7 @@ def build_and_start_docker_container(huggingface_model_name: str) -> None:
         hf_model_directory
     ), f"The model directory '{hf_model_directory}' does not exist."
     # check if all the required files exist
-    for file_name in TARGET_FILES_TO_GENERATE:
+    for file_name in NECESSARY_SERVICE_FILE_LIST:
         file_path = os.path.join(hf_model_directory, file_name)
         assert os.path.exists(
             file_path
