@@ -1,0 +1,1 @@
+This folder stores the test scripts for different functionalities of the entire pipeline.

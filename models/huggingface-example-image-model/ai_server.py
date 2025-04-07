@@ -1,17 +1,14 @@
+import json
+import os
 import time
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
-from logger import Logger
-
-# -------------------------------------------
-# Model setup
-# -------------------------------------------
-ai_model_endpoint_spec = {
-    "model_input_form_spec": None,
-    "model_output_json_spec": None,
-    "profile_output_json_spec": None,
-}
+from ai_server_utils import (
+    PROFILE_OUTPUT_JSON_SPEC,
+    NODE_ID,
+    K8S_POD_NAME,
+)
 
 
 # -------------------------------------------
@@ -20,6 +17,14 @@ ai_model_endpoint_spec = {
 # Record the script start time (when uvicorn starts the process)
 SCRIPT_START_TIME = time.time()
 INITIALIZATION_DURATION = 0.0
+service_endpoint_specs = {
+    "model_input_form_spec": None,
+    "model_output_json_spec": None,
+    "profile_output_json_spec": None,
+    "xai_model_input_form_spec": None,
+    "xai_model_output_json_spec": None,
+    "xai_profile_output_json_spec": None,
+}
 
 
 @asynccontextmanager
@@ -27,32 +32,54 @@ async def lifespan(app: FastAPI):
 
     global INITIALIZATION_DURATION
     global SCRIPT_START_TIME
-    global ai_model_endpoint_spec
+    global service_endpoint_specs
 
     # Load the AI model
     print("Loading AI model...")
     from model import (
         MODEL_INPUT_FORM_SPEC,
         MODEL_OUTPUT_JSON_SPEC,
-        PROFILE_OUTPUT_JSON_SPEC,
         router as model_router,
     )
 
-    ai_model_endpoint_spec["model_input_form_spec"] = MODEL_INPUT_FORM_SPEC
-    ai_model_endpoint_spec["model_output_json_spec"] = MODEL_OUTPUT_JSON_SPEC
-    ai_model_endpoint_spec["profile_output_json_spec"] = PROFILE_OUTPUT_JSON_SPEC
+    service_endpoint_specs["model_input_form_spec"] = MODEL_INPUT_FORM_SPEC
+    service_endpoint_specs["model_output_json_spec"] = MODEL_OUTPUT_JSON_SPEC
+    service_endpoint_specs["profile_output_json_spec"] = PROFILE_OUTPUT_JSON_SPEC
 
     app.include_router(model_router, prefix="/model", tags=["AI Model"])
+
+    # Load the XAI model
+    if os.path.exists(os.path.dirname(__file__) + "/xai_model.py"):
+        print("Loading XAI model...")
+        from xai_model import (
+            XAI_OUTPUT_JSON_SPEC,
+            router as xai_model_router,
+        )
+
+        # by default, the xai_model input form spec is the same as the model input form spec
+        service_endpoint_specs["xai_model_input_form_spec"] = MODEL_INPUT_FORM_SPEC
+        service_endpoint_specs["xai_model_output_json_spec"] = MODEL_OUTPUT_JSON_SPEC
+        service_endpoint_specs["xai_model_output_json_spec"].update(
+            XAI_OUTPUT_JSON_SPEC
+        )
+        service_endpoint_specs["xai_profile_output_json_spec"] = (
+            PROFILE_OUTPUT_JSON_SPEC
+        )
+        service_endpoint_specs["xai_profile_output_json_spec"].update(
+            XAI_OUTPUT_JSON_SPEC
+        )
+
+        app.include_router(xai_model_router, prefix="/xai_model", tags=["XAI Model"])
 
     # Record the initialization duration
     INITIALIZATION_DURATION = time.time() - SCRIPT_START_TIME
 
-    print(f"AI model loaded in {INITIALIZATION_DURATION:.2f} seconds.")
+    print(f"AI service loaded in {INITIALIZATION_DURATION:.2f} seconds.")
 
     yield
 
     # Clean up the models and release the resources
-    ai_model_endpoint_spec.clear()
+    service_endpoint_specs.clear()
 
 
 # -------------------------------------------
@@ -61,25 +88,23 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 
-@app.get("/get_ue_log")
-def get_log(ue_id: str):
-    # Retrieve logs for the specified UE_ID
-    logger = Logger.get_instance()
-    if logger is None:
-        return JSONResponse(
-            content={"error": "Logger not initialized."},
-            status_code=500,
-        )
-
-    log_data = logger.get_ue_run_log(ue_id=ue_id)
-    if log_data is None:
-        return JSONResponse(
-            content={"error": f"No logs found for UE_ID: {ue_id}"},
-            status_code=404,
-        )
-    return JSONResponse(content=log_data)
+# -------------------------------------------
+# Middlewares
+# -------------------------------------------
+@app.middleware("http")
+async def prepare_header_middleware(request: Request, call_next):
+    start_time = time.perf_counter()
+    response = await call_next(request)
+    process_time = time.perf_counter() - start_time
+    response.headers["X-Process-Time"] = str(process_time)
+    response.headers["X-NODE-ID"] = NODE_ID
+    response.headers["X-K8S-POD-NAME"] = K8S_POD_NAME
+    return response
 
 
+# -------------------------------------------
+# General Endpoints
+# -------------------------------------------
 @app.get("/initialization_duration")
 def get_initialization_duration():
     """
@@ -102,56 +127,32 @@ def get_initialization_duration():
 
 @app.get("/help")
 def get_help():
-    global ai_model_endpoint_spec
-    return {
+    global service_endpoint_specs
+    help_info = {
         "endpoints": {
             "/model/run": {
                 "method": "POST",
                 "description": "Executes the AI model with the provided input data.",
                 "parameters": {
                     "ue_id": "User Equipment ID (string) for tracking the request.",
-                    **ai_model_endpoint_spec["model_input_form_spec"],
+                    **service_endpoint_specs["model_input_form_spec"],
                 },
                 "response": {
                     "ue_id": "User Equipment ID (string) for tracking the request.",
-                    "execution_duration": "Time taken to execute the model (in seconds).",
-                    **ai_model_endpoint_spec["model_output_json_spec"],
+                    **service_endpoint_specs["model_output_json_spec"],
                 },
             },
-            "/model/profile": {
+            "/model/profile_run": {
                 "method": "POST",
                 "description": "Profiles the AI model execution.",
                 "parameters": {
                     "ue_id": "User Equipment ID (string) for tracking the request.",
-                    **ai_model_endpoint_spec["model_input_form_spec"],
+                    **service_endpoint_specs["model_input_form_spec"],
                 },
                 "response": {
                     "ue_id": "User Equipment ID (string) for tracking the request.",
-                    "profile_results": "Profiling results of the AI model execution.",
-                    **ai_model_endpoint_spec["profile_output_json_spec"],
-                },
-            },
-            "/get_ue_log": {
-                "method": "GET",
-                "description": "Retrieves logs for a specific UE_ID.",
-                "parameters": {
-                    "ue_id": "User Equipment ID (string) to retrieve logs for."
-                },
-                "response": {
-                    "node_id": "Name of the computation node running the model.",
-                    "k8s_pod_name": "Name of the Kubernetes pod running the model.",
-                    "model_name": "Name of the AI model.",
-                    "ue_id": "User Equipment ID (string) for which logs are retrieved.",
-                    "total_input_size": "Total size of input data processed for the UE_ID (in bytes).",
-                    "total_execution_duration": "Total time taken for all executions for the UE_ID (in seconds).",
-                    "total_executions": "Total number of executions for the UE_ID.",
-                    "average_execution_duration": "Average time taken for each execution for the UE_ID (in seconds).",
-                    "latest_run": {
-                        "input_size": "Size of the latest input data processed (in bytes).",
-                        "execution_duration": "Time taken for the latest execution (in seconds).",
-                        "timestamp": "Timestamp of the latest execution"
-                        "(in seconds since epoch).",
-                    },
+                    "profile_result": "Profiling results of the AI model execution.",
+                    **service_endpoint_specs["profile_output_json_spec"],
                 },
             },
             "/initialization_duration": {
@@ -161,6 +162,36 @@ def get_help():
                     "initialization_duration": "Time taken to initialize the model (in seconds).",
                     "script_start_time": "Timestamp when the script started (in seconds since epoch).",
                 },
-            }
+            },
         }
     }
+
+    if service_endpoint_specs["xai_model_input_form_spec"] is not None:
+        help_info["endpoints"]["/xai_model/run"] = {
+            "method": "POST",
+            "description": "Executes the XAI model with the provided input data.",
+            "parameters": {
+                "ue_id": "User Equipment ID (string) for tracking the request.",
+                **service_endpoint_specs["xai_model_input_form_spec"],
+            },
+            "response": {
+                "ue_id": "User Equipment ID (string) for tracking the request.",
+                **service_endpoint_specs["xai_model_output_json_spec"],
+            },
+        }
+
+        help_info["endpoints"]["/xai_model/profile_run"] = {
+            "method": "POST",
+            "description": "Profiles the XAI model execution.",
+            "parameters": {
+                "ue_id": "User Equipment ID (string) for tracking the request.",
+                **service_endpoint_specs["xai_model_input_form_spec"],
+            },
+            "response": {
+                "ue_id": "User Equipment ID (string) for tracking the request.",
+                "profile_result": "Profiling results of the XAI model execution.",
+                **service_endpoint_specs["xai_profile_output_json_spec"],
+            },
+        }
+    
+    return JSONResponse(content=help_info)

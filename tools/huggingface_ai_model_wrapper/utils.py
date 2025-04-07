@@ -5,11 +5,11 @@ import socket
 from openai import OpenAI
 
 AI_SERVER_SCRIPT_NAME = "ai_server.py"
+AI_SERVER_UTILS_SCRIPT_NAME = "ai_server_utils.py"
 AI_CLIENT_SCRIPT_NAME = "ai_client.py"
 AI_CLIENT_UTILS_SCRIPT_NAME = "ai_client_utils.py"
 MODEL_SCRIPT_NAME = "model.py"
 DOCKERFILE_NAME = "Dockerfile"
-LOGGER_SCRIPT_NAME = "logger.py"
 HEALTHCHECK_SCRIPT_NAME = "healthcheck.py"
 SERVICE_DATA_JSON_NAME = "service_data.json"
 
@@ -17,8 +17,8 @@ TARGET_FILES_TO_GENERATE = [
     AI_SERVER_SCRIPT_NAME,
     AI_CLIENT_SCRIPT_NAME,
     AI_CLIENT_UTILS_SCRIPT_NAME,
+    AI_SERVER_UTILS_SCRIPT_NAME,
     DOCKERFILE_NAME,
-    LOGGER_SCRIPT_NAME,
     HEALTHCHECK_SCRIPT_NAME,
     MODEL_SCRIPT_NAME,
 ]

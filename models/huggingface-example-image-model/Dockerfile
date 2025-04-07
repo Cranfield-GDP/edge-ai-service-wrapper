@@ -22,6 +22,10 @@ RUN pip install --no-cache-dir \
     psutil \
     requests
 
+# Install XAI libraries.
+# Currently only XAI for image-classification models in pytorch is supported.
+RUN pip install --no-cache-dir grad-cam
+
 # Stage 2: Final stage
 FROM python:3.12-slim
 

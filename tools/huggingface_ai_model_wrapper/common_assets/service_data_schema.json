@@ -1,0 +1,67 @@
+{
+    "model_name": "",
+    "model_url": "",
+    "task": "",
+    "task_detail": "",
+    "accuracy_info": "",
+    "image_repository_url": "",
+    "service_disk_size_bytes": 0,
+    "profiles": [
+        {
+            "node_id": "LAP004262",
+            "device_type": "DeviceType.CPU",
+            "device_name": "None",
+            "initialization_time_ms": 14707.844734191895,
+            "eviction_time_ms": 0,
+            "initialization_cost": 0,
+            "keep_alive_cost": 0,
+            "energy_consumption_idle": 0,
+            "inference": {
+                "cpu_time_ms": 56.413723,
+                "device_time_ms": 0.0,
+                "cpu_memory_usage_MB": 122.220703125,
+                "self_cpu_memory_usage_MB": 122.220703125,
+                "device_memory_usage_MB": 0.0,
+                "self_device_memory_usage_MB": 0.0,
+                "energy_consumption_execution": 0,
+                "disk_IO_MB": 0,
+                "input_data_MB": 0,
+                "output_data_MB": 0,
+                "execution_time_ms": 178.7626028060913,
+                "execution_cost": 0
+            },
+            "xai": [
+                {
+                    "xai_method": "GradCAM",
+                    "cpu_time_ms": 0.0,
+                    "device_time_ms": 0.0,
+                    "cpu_memory_usage_MB": 0.0,
+                    "self_cpu_memory_usage_MB": 0.0,
+                    "device_memory_usage_MB": 0.0,
+                    "self_device_memory_usage_MB": 0.0,
+                    "energy_consumption_execution": 0,
+                    "disk_IO_MB": 0,
+                    "input_data_MB": 0,
+                    "output_data_MB": 0,
+                    "execution_time_ms": 0.0,
+                    "execution_cost": 0
+                }
+            ]
+        }
+    ],
+    "feedback": {
+        "likes": [],
+        "dislikes": [],
+        "comments": []
+    },
+    "code": {
+        "readme_content": "",
+        "dockerfile_content": "",
+        "ai_server_script_content": "",
+        "ai_client_script_content": "",
+        "ai_client_utils_script_content": "",
+        "model_script_content": "",
+        "healthcheck_script_content": "",
+        "logger_script_content": ""
+    }
+}
