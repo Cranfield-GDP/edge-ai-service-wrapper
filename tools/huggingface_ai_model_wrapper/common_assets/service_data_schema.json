@@ -63,6 +63,6 @@
         "ai_client_script_content": "",
         "ai_client_utils_script_content": "",
         "model_script_content": "",
-        "healthcheck_script_content": "",
+        "healthcheck_script_content": ""
     }
 }
