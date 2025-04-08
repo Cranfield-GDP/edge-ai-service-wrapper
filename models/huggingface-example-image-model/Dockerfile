@@ -38,4 +38,4 @@ COPY . .
 EXPOSE 8000
 
 # Start the FastAPI server
-CMD ["uvicorn", "ai_server:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "ai_server:app", "--host", "0.0.0.0", "--port", "8000", "--timeout-keep-alive", "600"]

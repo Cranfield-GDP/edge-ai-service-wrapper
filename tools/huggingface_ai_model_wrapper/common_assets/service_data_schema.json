@@ -16,6 +16,8 @@
             "initialization_cost": 0,
             "keep_alive_cost": 0,
             "energy_consumption_idle": 0,
+            "idle_container_cpu_memory_usage": "15GB",
+            "idle_container_device_memory_usage": "0GB",
             "inference": {
                 "cpu_time_ms": 56.413723,
                 "device_time_ms": 0.0,

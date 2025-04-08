@@ -23,10 +23,8 @@ processor = AutoImageProcessor.from_pretrained(MODEL_NAME, use_fast=True)
 model = ResNetForImageClassification.from_pretrained(MODEL_NAME)
 model.eval()
 
-
 # Initialize the FastAPI router
 router = APIRouter()
-
 
 @router.post("/run")
 async def run_model(file: UploadFile = File(...), ue_id: str = Form(...)):
@@ -54,7 +52,6 @@ async def run_model(file: UploadFile = File(...), ue_id: str = Form(...)):
             content={"error": "Failed to process the image. {e}".format(e=str(e))},
             status_code=500,
         )
-
 
 @router.post("/profile_run")
 async def profile_run(file: UploadFile = File(...), ue_id: str = Form(...)):
@@ -94,7 +91,6 @@ async def profile_run(file: UploadFile = File(...), ue_id: str = Form(...)):
             content={"error": f"Failed to process the request. {e}"},
             status_code=500,
         )
-
 
 # Below are the model input and output specifications to be used by the `/help` endpoint
 MODEL_INPUT_FORM_SPEC = {

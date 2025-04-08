@@ -405,29 +405,6 @@ def copy_test_image(model_name: str) -> str:
             dest_file.write(source_file.read())
 
 
-def copy_(model_name: str) -> str:
-    """Copy a test image for the model."""
-    assert get_hf_model_directory(
-        model_name
-    ), f"Model directory not found for {model_name}."
-
-    test_image_file = "puppy.png"
-    test_image_output_path = os.path.join(
-        get_hf_model_directory(model_name), test_image_file
-    )
-
-    test_image_source_path = os.path.join(
-        os.path.dirname(__file__), "common_assets", test_image_file
-    )
-    assert os.path.exists(
-        test_image_source_path
-    ), f"Test image not found: {test_image_source_path}"
-
-    with open(test_image_source_path, "rb") as source_file:
-        with open(test_image_output_path, "wb") as dest_file:
-            dest_file.write(source_file.read())
-
-
 def get_image_repository_name(model_name: str) -> str:
     """Get the name of the docker image."""
     ai_service_image_name = get_docker_image_build_name(model_name).replace(

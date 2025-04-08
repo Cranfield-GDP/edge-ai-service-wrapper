@@ -2,37 +2,50 @@ from pydantic import BaseModel
 from typing import List, Optional
 
 
-class ResourceProfile(BaseModel):
+class InferenceProfile(BaseModel):
     cpu_time_ms: float
     device_time_ms: float
     cpu_memory_usage_MB: float
+    self_cpu_memory_usage_MB: float
     device_memory_usage_MB: float
+    self_device_memory_usage_MB: float
     energy_consumption_execution: float
-    energy_consumption_idle: float
     disk_IO_MB: float
     input_data_MB: float
     output_data_MB: float
+    execution_time_ms: float
+    execution_cost: float
 
 
-class LatencyProfile(BaseModel):
-    initialization_time_ms: float
-    inference_time_ms: float
-    eviction_time_ms: float
-
-
-class BillingProfile(BaseModel):
-    initialization_cost: float
-    keep_alive_cost: float
+class XAIProfile(BaseModel):
+    xai_method: str
+    cpu_time_ms: float
+    device_time_ms: float
+    cpu_memory_usage_MB: float
+    self_cpu_memory_usage_MB: float
+    device_memory_usage_MB: float
+    self_device_memory_usage_MB: float
+    energy_consumption_execution: float
+    disk_IO_MB: float
+    input_data_MB: float
+    output_data_MB: float
+    execution_time_ms: float
     execution_cost: float
 
 
 class Profile(BaseModel):
     node_id: str
-    resource: ResourceProfile
-    latency: LatencyProfile
-    billing: BillingProfile
     device_type: str
     device_name: str
+    initialization_time_ms: float
+    eviction_time_ms: float
+    initialization_cost: float
+    keep_alive_cost: float
+    energy_consumption_idle: float
+    idle_container_cpu_memory_usage: str
+    idle_container_device_memory_usage: str
+    inference: InferenceProfile
+    xai: List[XAIProfile]
 
 
 class Feedback(BaseModel):

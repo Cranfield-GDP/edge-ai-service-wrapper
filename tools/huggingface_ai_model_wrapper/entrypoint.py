@@ -1,7 +1,7 @@
 import sys
 import subprocess
 from code_generation import code_generation_main
-from docker_validation import build_and_start_docker_container
+from docker_validation import build_and_start_docker_container, update_container_memory_usage
 from docker_image_upload import push_docker_image_main
 import traceback
 from utils import (
@@ -110,6 +110,21 @@ def option_update_ai_service_database():
     except Exception as e:
         print(f"Error: {e}")
 
+
+def option_update_container_memory_usage():
+    """Manually update the container cpu memory and device memory usage."""
+
+    global huggingface_model_name
+
+    new_model_name = input(f"Enter the Hugging Face model name (default: {huggingface_model_name}): ")
+    if new_model_name.strip():
+        huggingface_model_name = new_model_name
+    try:
+        update_container_memory_usage(huggingface_model_name)
+        print("Container memory usage updated successfully.")
+    except Exception as e:
+        print(f"Error: {e}")
+
 OPTIONS = [
     {
         "label": "Generate codes to wrap a given AI model into a FastAPI service",
@@ -130,6 +145,10 @@ OPTIONS = [
     {
         "label": "Open another terminal to test the AI service",
         "function": option_open_client_script_terminal,
+    },
+    {
+        "label": "Update container memory usage",
+        "function": option_update_container_memory_usage,
     },
     {
         "label": "Push the docker image to the Docker Hub",

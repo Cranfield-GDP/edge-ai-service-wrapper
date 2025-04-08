@@ -12,7 +12,7 @@ def prepare_ai_service_request_files():
 
 
 def prepare_ai_service_request_data():
-    """Prepare the `data` part for the AI service request."""
+    """Prepare the `data` part other than `ue_id` for the AI service request."""
     data = {}
     # Add any additional data needed by the AI service
     return data

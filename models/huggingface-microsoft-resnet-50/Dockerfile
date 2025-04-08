@@ -22,7 +22,8 @@ RUN pip install --no-cache-dir \
     python-multipart \
     Pillow \
     psutil \
-    requests
+    requests \
+    datasets
 
 # Install XAI libraries.
 # Currently only XAI for image-classification models in pytorch is supported.
@@ -38,4 +39,4 @@ COPY . .
 EXPOSE 8000
 
 # Start the FastAPI server
-CMD ["uvicorn", "ai_server:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "ai_server:app", "--host", "0.0.0.0", "--port", "8000", "--timeout-keep-alive", "600"]
