@@ -5,6 +5,7 @@ from utils import (
     AI_CLIENT_SCRIPT_NAME,
     AI_SERVER_SCRIPT_NAME,
     AI_SERVER_UTILS_SCRIPT_NAME,
+    COMPLETE_SERVICE_FILE_LIST,
     HEALTHCHECK_SCRIPT_NAME,
     NECESSARY_SERVICE_FILE_LIST,
     XAI_MODEL_SCRIPT_NAME,
@@ -39,7 +40,7 @@ def code_generation_main(huggingface_model_name: str) -> None:
     ), f"The example model directory '{example_model_directory}' does not exist."
 
     example_model_files_content = {}
-    for file_name in NECESSARY_SERVICE_FILE_LIST:
+    for file_name in COMPLETE_SERVICE_FILE_LIST:
         file_path = os.path.join(example_model_directory, file_name)
         assert os.path.exists(
             file_path
