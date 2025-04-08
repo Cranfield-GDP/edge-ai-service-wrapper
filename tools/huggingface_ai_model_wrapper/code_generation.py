@@ -2,17 +2,21 @@ import os
 import shutil
 from dotenv import load_dotenv
 from utils import (
+    AI_CLIENT_SCRIPT_NAME,
+    AI_SERVER_SCRIPT_NAME,
+    AI_SERVER_UTILS_SCRIPT_NAME,
+    HEALTHCHECK_SCRIPT_NAME,
     NECESSARY_SERVICE_FILE_LIST,
-    copy_ai_client_utils_script,
-    copy_healthcheck_script,
+    XAI_MODEL_SCRIPT_NAME,
+    copy_file_from_example_model_folder,
     download_model_readme,
-    generate_ai_client_script,
+    generate_ai_client_utils_script,
     generate_model_script,
     generate_dockerfile,
     get_hf_model_directory,
     get_hf_model_readme,
+    get_model_pipeline_tag,
     validate_hf_model_name,
-    copy_ai_server_script,
 )
 
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", "..", ".env"))
@@ -60,7 +64,8 @@ def code_generation_main(huggingface_model_name: str) -> None:
     # --------------------------------
     # Copy the healthcheck.py file directly
     # --------------------------------
-    copy_healthcheck_script(
+    copy_file_from_example_model_folder(
+        HEALTHCHECK_SCRIPT_NAME,
         hf_model_directory, example_model_files_content, output_files_content
     )
     print(f"Healthcheck file copied to {hf_model_directory}.")
@@ -68,18 +73,29 @@ def code_generation_main(huggingface_model_name: str) -> None:
     # --------------------------------
     # Copy the ai_server.py file directly
     # --------------------------------
-    copy_ai_server_script(
+    copy_file_from_example_model_folder(
+        AI_SERVER_SCRIPT_NAME,
         hf_model_directory, example_model_files_content, output_files_content
     )
     print(f"AI server file copied to {hf_model_directory}.")
 
     # --------------------------------
-    # Copy the ai_client_utils.py file directly
+    # Copy the ai_server_utils.py file directly
     # --------------------------------
-    copy_ai_client_utils_script(
+    copy_file_from_example_model_folder(
+        AI_SERVER_UTILS_SCRIPT_NAME,
         hf_model_directory, example_model_files_content, output_files_content
     )
-    print(f"AI client utils script copied to {hf_model_directory}.")
+    print(f"AI server utils file copied to {hf_model_directory}.")
+
+    # --------------------------------
+    # Copy the ai_client.py file directly
+    # --------------------------------
+    copy_file_from_example_model_folder(
+        AI_CLIENT_SCRIPT_NAME,
+        hf_model_directory, example_model_files_content, output_files_content
+    )
+    print(f"AI client script copied to {hf_model_directory}.")
 
     # --------------------------------
     # Download the README file
@@ -98,6 +114,21 @@ def code_generation_main(huggingface_model_name: str) -> None:
         hf_model_directory,
     )
     print(f"AI model script generated and saved.")
+    
+    # --------------------------------
+    # Generate the xai_model.py if applicable
+    # ---------------------------------
+    model_task = get_model_pipeline_tag(huggingface_model_name)
+    # currently only image-classification is supported for XAI
+    xai_enabled = model_task == "image-classification"
+    if xai_enabled:
+        copy_file_from_example_model_folder(
+            XAI_MODEL_SCRIPT_NAME,
+            hf_model_directory, example_model_files_content, output_files_content
+        )
+        print(f"XAI model script copied.")
+    else:
+        print(f"The model {huggingface_model_name} does not support XAI.")
 
     # --------------------------------
     # Generating the Dockerfile
@@ -112,16 +143,16 @@ def code_generation_main(huggingface_model_name: str) -> None:
     print(f"Dockerfile generated and saved.")
 
     # --------------------------------
-    # Generating the client file
+    # Generating the client_utils file
     # --------------------------------
-    generate_ai_client_script(
+    generate_ai_client_utils_script(
         huggingface_model_name,
         huggingface_model_readme,
         example_model_files_content,
         output_files_content,
         hf_model_directory,
     )
-    print(f"AI client script generated and saved.")
+    print(f"AI client utils script generated and saved.")
 
 
 if __name__ == "__main__":

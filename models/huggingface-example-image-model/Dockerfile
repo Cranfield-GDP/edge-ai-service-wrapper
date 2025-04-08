@@ -1,13 +1,12 @@
-# Stage 1: Build stage
-FROM python:3.12-slim AS builder
+# Do Not Separate Builder and Runtime Stages
+FROM python:3.12-slim 
 
-# Install build dependencies
+# Install common dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
+    libgl1 \
+    libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
-
-# Set working directory
-WORKDIR /app
 
 # Install Python dependencies
 RUN pip install --no-cache-dir --upgrade pip
@@ -16,6 +15,9 @@ RUN pip install --no-cache-dir \
     uvicorn[standard] \
     torch \
     torchvision \
+    opencv-python \
+    opencv-python-headless \
+    accelerate \
     transformers \
     python-multipart \
     Pillow \
@@ -26,15 +28,8 @@ RUN pip install --no-cache-dir \
 # Currently only XAI for image-classification models in pytorch is supported.
 RUN pip install --no-cache-dir grad-cam
 
-# Stage 2: Final stage
-FROM python:3.12-slim
-
 # Set working directory
 WORKDIR /app
-
-# Copy installed packages from builder stage
-COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
-COPY --from=builder /usr/local/bin/uvicorn /usr/local/bin/uvicorn
 
 # Copy application code
 COPY . .

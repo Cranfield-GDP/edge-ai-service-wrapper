@@ -6,6 +6,7 @@ def prepare_ai_service_request_files():
     image_file_path = input("Please input the image file path: ")
     with open(image_file_path, "rb") as image_file:
         # save the content of the file instead of a buffered reader
+        # to avoid "read from closed file" error
         files["file"] = image_file.read()
     return files
 

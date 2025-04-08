@@ -1,6 +1,4 @@
-import base64
 from typing import Callable, List, Optional
-from io import BytesIO
 from fastapi import APIRouter, File, Form, UploadFile
 from fastapi.responses import JSONResponse
 from PIL import Image

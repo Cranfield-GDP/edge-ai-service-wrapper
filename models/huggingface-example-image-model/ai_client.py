@@ -534,11 +534,11 @@ OPTIONS = [
         "action": option_profile_run,
     },
     {
-        "label": "Run AI service with XAI",
+        "label": "Run AI service with XAI (only image-classification models)",
         "action": option_run_with_xai,
     },
     {
-        "label": "Profile AI service with XAI",
+        "label": "Profile AI service with XAI (only image-classification models)",
         "action": option_profile_run_with_xai,
     },
 ]

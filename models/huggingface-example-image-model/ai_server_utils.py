@@ -68,19 +68,6 @@ def prepare_profile_results(prof):
     return profile_result
 
 
-def profile_model_run(model_inputs, model):
-    # Perform inference
-    with profile(
-        activities=profile_activities,
-        profile_memory=True,
-    ) as prof:
-        with record_function("model_run"):
-            with torch.no_grad():
-                model_outputs = model(**model_inputs)
-
-    return model_outputs, prepare_profile_results(prof)
-
-
 def encode_image(image):
     """
     Encode the image to bytes

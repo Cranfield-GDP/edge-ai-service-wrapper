@@ -1,15 +1,23 @@
-# import model utilities
-from ai_server_utils import process_model_output_logits, profile_model_run
+# import server utils
+from ai_server_utils import (
+    process_model_output_logits,
+    profile_activities,
+    prepare_profile_results,
+)
+# import profile utils
+from torch.profiler import profile, record_function
 
-# import necessary libs for AI model and request handling
+# import necessary libs for AI model inference and request handling
 import torch
 from fastapi import APIRouter, File, Form, UploadFile
 from fastapi.responses import JSONResponse
 from transformers import AutoImageProcessor, ResNetForImageClassification
 from PIL import Image
 
-
+# --------------------------------
 # Model-specific configuration
+# make sure the variables `MODEL_NAME` and `model` are defined here.
+# --------------------------------
 MODEL_NAME = "microsoft/resnet-50"
 processor = AutoImageProcessor.from_pretrained(MODEL_NAME, use_fast=True)
 model = ResNetForImageClassification.from_pretrained(MODEL_NAME)
@@ -47,6 +55,7 @@ async def run_model(file: UploadFile = File(...), ue_id: str = Form(...)):
             status_code=500,
         )
 
+
 @router.post("/profile_run")
 async def profile_run(file: UploadFile = File(...), ue_id: str = Form(...)):
     """
@@ -58,10 +67,15 @@ async def profile_run(file: UploadFile = File(...), ue_id: str = Form(...)):
         inputs = processor(images=image, return_tensors="pt")
 
         # perform profiling
-        model_outputs, profile_result = profile_model_run(
-            model_inputs=inputs,
-            model=model,
-        )
+        with profile(
+            activities=profile_activities,
+            profile_memory=True,
+        ) as prof:
+            with record_function("model_run"):
+                with torch.no_grad():
+                    model_outputs = model(**inputs)
+
+        profile_result = prepare_profile_results(prof)
 
         # Process the model outputs
         predictions = process_model_output_logits(model, model_outputs.logits)

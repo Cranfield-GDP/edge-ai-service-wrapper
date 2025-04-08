@@ -61,42 +61,17 @@ def get_hf_model_readme(model_name: str) -> str:
         return ""
 
 
-def copy_healthcheck_script(
-    model_output_directory: str, example_content: dict, output_files_content: dict
+def copy_file_from_example_model_folder(
+    file_to_copy: str,
+    model_output_directory: str,
+    example_content: dict,
+    output_files_content: dict,
 ) -> None:
-    """Copy the healthcheck.py file directly."""
-    healthcheck_file_path = os.path.join(
-        model_output_directory, HEALTHCHECK_SCRIPT_NAME
-    )
-    with open(healthcheck_file_path, "w") as file:
-        file.write(example_content[HEALTHCHECK_SCRIPT_NAME])
-    output_files_content[HEALTHCHECK_SCRIPT_NAME] = example_content[
-        HEALTHCHECK_SCRIPT_NAME
-    ]
-
-
-def copy_ai_server_script(
-    model_output_directory: str, example_content: dict, output_files_content: dict
-) -> None:
-    """Copy the ai_server.py file directly."""
-    server_file_path = os.path.join(model_output_directory, AI_SERVER_SCRIPT_NAME)
-    with open(server_file_path, "w") as file:
-        file.write(example_content[AI_SERVER_SCRIPT_NAME])
-    output_files_content[AI_SERVER_SCRIPT_NAME] = example_content[AI_SERVER_SCRIPT_NAME]
-
-
-def copy_ai_client_utils_script(
-    model_output_directory: str, example_content: dict, output_files_content: dict
-) -> None:
-    """Copy the ai_client_utils.py file directly."""
-    client_utils_file_path = os.path.join(
-        model_output_directory, AI_CLIENT_UTILS_SCRIPT_NAME
-    )
-    with open(client_utils_file_path, "w") as file:
-        file.write(example_content[AI_CLIENT_UTILS_SCRIPT_NAME])
-    output_files_content[AI_CLIENT_UTILS_SCRIPT_NAME] = example_content[
-        AI_CLIENT_UTILS_SCRIPT_NAME
-    ]
+    """Copy the specified file from the example content."""
+    file_path = os.path.join(model_output_directory, file_to_copy)
+    with open(file_path, "w") as file:
+        file.write(example_content[file_to_copy])
+    output_files_content[file_to_copy] = example_content[file_to_copy]
 
 
 def generate_model_script(
@@ -106,7 +81,7 @@ def generate_model_script(
     output_files_content: dict,
     model_output_directory: str,
 ) -> None:
-    """Generate the AI model.py file."""
+    """Generate the model.py file."""
 
     client = OpenAI()
     completion = client.chat.completions.create(
@@ -115,7 +90,7 @@ def generate_model_script(
             {
                 "role": "user",
                 "content": f"""Help me generate the fastAPI router script for the fastAPI service which serves the pre-trained hugging face model {model_name}.
------------------                
+-----------------
 Below is the README file of the hugging face model:
 {model_readme}
 
@@ -126,6 +101,7 @@ Below is an example model script content for your reference:
 -----------------
 Requirements:
 - follow the same endpoint design as the example model script.
+- use the provided util functions from ai_server_utils as much as possible.
 - if the AI model output binary content such as images, return the binary content in the response instead of saving it locally.
 - Output only the raw content of the model script, without any additional text or explanation. 
 - Do not wrap the output inside the ```python``` code block.""",
@@ -189,53 +165,53 @@ Requirements:
     output_files_content[DOCKERFILE_NAME] = dockerfile_content
 
 
-def generate_ai_client_script(
+def generate_ai_client_utils_script(
     model_name: str,
     model_readme,
     example_content: dict,
     output_files_content: dict,
     model_output_directory: str,
 ) -> None:
-    """Generate the AI client file."""
+    """Generate the AI client utils file."""
     client = OpenAI()
     completion = client.chat.completions.create(
         model="gpt-4o",
         messages=[
             {
                 "role": "user",
-                "content": f"""Help me generate a client script to test an AI service ({model_name}) served by a fastAPI server.
+                "content": f"""Help me generate a util script for a FastAPI client to test an AI service ({model_name}) served by a fastAPI server.
 
 -----------------
 Below is the README file of the hugging face model:
 {model_readme}
 
 ------------------
-Below is the content of the `model.py`
+Below is the content of the `model.py` that serves the AI model:
 {example_content[MODEL_SCRIPT_NAME]}
 
 -------------------
-Below is an example client script (for a image processing AI service) for your reference:
-{example_content[AI_CLIENT_SCRIPT_NAME]}
+Below is an example util script (for a image processing AI service) for your reference:
+{example_content[AI_CLIENT_UTILS_SCRIPT_NAME]}
 
 --------------------
 Requirements:
-- follow similar command line interface design as the example client script.
-- use the ProfileResultProcessor class and url getter utils the same way as the example client script.
-- If the AI model outputs binary content such as images, save the binary content to a file and print the save path.
-- Do not run AI model in the client script.
-- output only the raw content of the client script, without any additional text or explanation.
+- generate the two functions for preparing the two variables `files` and `data` respectively.
+- these two functions will be called by the actual client script later.
+- output only the raw content of the client util script, without any additional text or explanation.
 - do not wrap the output inside the ```python``` code block.
 """,
             }
         ],
     )
 
-    ai_client_content = completion.choices[0].message.content
-    print(ai_client_content)
+    ai_client_util_script_content = completion.choices[0].message.content
+    print(ai_client_util_script_content)
 
-    with open(os.path.join(model_output_directory, AI_CLIENT_SCRIPT_NAME), "w") as file:
-        file.write(ai_client_content)
-    output_files_content[AI_CLIENT_SCRIPT_NAME] = ai_client_content
+    with open(
+        os.path.join(model_output_directory, AI_CLIENT_UTILS_SCRIPT_NAME), "w"
+    ) as file:
+        file.write(ai_client_util_script_content)
+    output_files_content[AI_CLIENT_UTILS_SCRIPT_NAME] = ai_client_util_script_content
 
 
 def get_available_port() -> int:
@@ -376,6 +352,10 @@ def prepare_service_data_json(model_name: str) -> str:
     service_data_json["code"]["ai_server_script_content"] = open(
         os.path.join(get_hf_model_directory(model_name), AI_SERVER_SCRIPT_NAME), "r"
     ).read()
+    service_data_json["code"]["ai_server_utils_script_content"] = open(
+        os.path.join(get_hf_model_directory(model_name), AI_SERVER_UTILS_SCRIPT_NAME),
+        "r",
+    ).read()
     service_data_json["code"]["ai_client_script_content"] = open(
         os.path.join(get_hf_model_directory(model_name), AI_CLIENT_SCRIPT_NAME), "r"
     ).read()
@@ -389,6 +369,14 @@ def prepare_service_data_json(model_name: str) -> str:
     service_data_json["code"]["healthcheck_script_content"] = open(
         os.path.join(get_hf_model_directory(model_name), HEALTHCHECK_SCRIPT_NAME), "r"
     ).read()
+
+    if os.path.exists(
+        os.path.join(get_hf_model_directory(model_name), XAI_MODEL_SCRIPT_NAME)
+    ):
+        service_data_json["code"]["xai_model_script_content"] = open(
+            os.path.join(get_hf_model_directory(model_name), XAI_MODEL_SCRIPT_NAME),
+            "r",
+        ).read()
 
     with open(output_path, "w") as dest_file:
         dest_file.write(json.dumps(service_data_json, indent=4))
