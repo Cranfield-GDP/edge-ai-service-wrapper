@@ -36,12 +36,8 @@ from ai_server_utils import (
 
 # Currently only support GradCAM on image-classification models.
 # so we import the model directly from the model.py file
-from model import model, MODEL_NAME
+from model import model, processor as resize_and_normalize_processor
 
-
-resize_and_normalize_processor = AutoImageProcessor.from_pretrained(
-    MODEL_NAME, use_fast=True
-)
 resize_only_processor = transforms.Compose(
     [
         transforms.Resize((224, 224)),
@@ -82,7 +78,7 @@ def get_model_to_tensor_wrapper_class():
 
 def get_target_layers_for_grad_cam(model: torch.nn.Module):
     """Helper function to get the target layer for GradCAM."""
-    return [model.resnet.encoder.stages[-1].layers[-1]]
+    return [model.regnet.encoder.stages[-1]]
 
 
 def get_classifier_output_target_class():
