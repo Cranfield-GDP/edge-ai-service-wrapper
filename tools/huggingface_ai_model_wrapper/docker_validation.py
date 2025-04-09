@@ -95,6 +95,19 @@ def build_and_start_docker_container(huggingface_model_name: str) -> None:
     )
 
     # --------------------------------
+    # stop the docker container if it is running
+    # --------------------------------
+    container_name = get_docker_container_run_name(huggingface_model_name)
+    try:
+        subprocess.run(
+            ["docker", "stop", container_name],
+            check=True,
+        )
+        print(f"Docker container {container_name} stopped successfully.")
+    except subprocess.CalledProcessError:
+        print(f"Docker container {container_name} is not running.")
+
+    # --------------------------------
     # Run the docker container
     # ---------------------------------
     available_port = get_available_port()
