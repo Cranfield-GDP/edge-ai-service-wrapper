@@ -75,31 +75,22 @@ class HuggingfaceToTensorModelWrapper(torch.nn.Module):
         return self.model(x).logits
 
 
-def get_model_to_tensor_wrapper_class(MODEL_NAME: str):
+def get_model_to_tensor_wrapper_class():
     """Helper function to get the model wrapper class."""
-    if MODEL_NAME == "microsoft/resnet-50":
-        return HuggingfaceToTensorModelWrapper
-    else:
-        raise ValueError(f"Model {MODEL_NAME} is not supported for GradCAM.")
+    return HuggingfaceToTensorModelWrapper
 
 
-def get_target_layers_for_grad_cam(MODEL_NAME: str, model: torch.nn.Module):
+def get_target_layers_for_grad_cam(model: torch.nn.Module):
     """Helper function to get the target layer for GradCAM."""
-    if MODEL_NAME == "microsoft/resnet-50":
-        return [model.resnet.encoder.stages[-1].layers[-1]]
-    else:
-        raise ValueError(f"Model {MODEL_NAME} is not supported for GradCAM.")
+    return [model.resnet.encoder.stages[-1].layers[-1]]
 
 
-def get_classifier_output_target_class(MODEL_NAME: str):
+def get_classifier_output_target_class():
     """Helper function to get the classifier output target class."""
-    if MODEL_NAME == "microsoft/resnet-50":
-        return ClassifierOutputTarget
-    else:
-        raise ValueError(f"Model {MODEL_NAME} is not supported for GradCAM.")
+    return ClassifierOutputTarget
 
 
-def get_reshape_transform(MODEL_NAME: str, model: torch.nn.Module):
+def get_reshape_transform():
     """Helper function to get the reshape transform for GradCAM."""
     return None
 
@@ -192,9 +183,9 @@ async def run_model(
         ), f"GradCAM method '{gradcam_method_name}' is not supported. "
         gradcam_method = GRADCAM_METHODS[gradcam_method_name]
 
-        model_wrapper_class = get_model_to_tensor_wrapper_class(MODEL_NAME)
-        target_layers = get_target_layers_for_grad_cam(MODEL_NAME, model)
-        reshape_transform = get_reshape_transform(MODEL_NAME, model)
+        model_wrapper_class = get_model_to_tensor_wrapper_class()
+        target_layers = get_target_layers_for_grad_cam(model)
+        reshape_transform = get_reshape_transform()
 
         # Perform inference
         print("Running GradCAM...")
