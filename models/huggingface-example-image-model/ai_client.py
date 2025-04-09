@@ -13,10 +13,10 @@ from ai_client_utils import (
 XAI_GRADCAM_METHODS = [
     "GradCAM",
     "HiResCAM",
-    "AblationCAM",
+    # "AblationCAM",
     "XGradCAM",
     "GradCAMPlusPlus",
-    "ScoreCAM",
+    # "ScoreCAM",
     "LayerCAM",
     "EigenCAM",
     "EigenGradCAM",
