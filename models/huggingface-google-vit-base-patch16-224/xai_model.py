@@ -24,7 +24,7 @@ import torch
 from torchvision import transforms
 from transformers import AutoImageProcessor
 from typing import List, Optional
-
+from model import processor as resize_and_normalize_processor
 
 # import model utilities
 from ai_server_utils import (
@@ -38,10 +38,6 @@ from ai_server_utils import (
 # so we import the model directly from the model.py file
 from model import model, MODEL_NAME
 
-
-resize_and_normalize_processor = AutoImageProcessor.from_pretrained(
-    MODEL_NAME, use_fast=True
-)
 resize_only_processor = transforms.Compose(
     [
         transforms.Resize((224, 224)),
@@ -52,7 +48,6 @@ resize_only_processor = transforms.Compose(
 GRADCAM_METHODS = {
     "GradCAM": GradCAM,
     "HiResCAM": HiResCAM,
-    "AblationCAM": AblationCAM,
     "XGradCAM": XGradCAM,
     "GradCAMPlusPlus": GradCAMPlusPlus,
     "ScoreCAM": ScoreCAM,
@@ -82,7 +77,7 @@ def get_model_to_tensor_wrapper_class():
 
 def get_target_layers_for_grad_cam(model: torch.nn.Module):
     """Helper function to get the target layer for GradCAM."""
-    return [model.resnet.encoder.stages[-1].layers[-1]]
+    return [model.vit.encoder.layer[-2].output]
 
 
 def get_classifier_output_target_class():
@@ -90,9 +85,17 @@ def get_classifier_output_target_class():
     return ClassifierOutputTarget
 
 
+def reshape_transform_vit_huggingface(x):
+    activations = x[:, 1:, :]
+    activations = activations.view(activations.shape[0],
+                                   14, 14, activations.shape[2])
+    activations = activations.transpose(2, 3).transpose(1, 2)
+    return activations
+
+
 def get_reshape_transform():
     """Helper function to get the reshape transform for GradCAM."""
-    return None
+    return reshape_transform_vit_huggingface
 
 
 def run_grad_cam_on_image(
@@ -250,9 +253,9 @@ async def profile_run(
         ), f"GradCAM method '{gradcam_method_name}' is not supported. "
         gradcam_method = GRADCAM_METHODS[gradcam_method_name]
 
-        model_wrapper_class = get_model_to_tensor_wrapper_class(MODEL_NAME)
-        target_layers = get_target_layers_for_grad_cam(MODEL_NAME, model)
-        reshape_transform = get_reshape_transform(MODEL_NAME, model)
+        model_wrapper_class = get_model_to_tensor_wrapper_class()
+        target_layers = get_target_layers_for_grad_cam(model)
+        reshape_transform = get_reshape_transform()
 
         # perform profiling
         with profile(
