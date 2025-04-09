@@ -1,3 +1,4 @@
+from functools import partial
 from typing import Callable, List, Optional
 from fastapi import APIRouter, File, Form, UploadFile
 from fastapi.responses import JSONResponse
@@ -82,7 +83,7 @@ def get_model_to_tensor_wrapper_class():
 
 def get_target_layers_for_grad_cam(model: torch.nn.Module):
     """Helper function to get the target layer for GradCAM."""
-    return [model.resnet.encoder.stages[-1].layers[-1]]
+    return [model.cvt.encoder.stages[-1].layers[-2]]
 
 
 def get_classifier_output_target_class():
@@ -98,9 +99,12 @@ def reshape_gradcam_transform_cvt_huggingface(tensor, model, width, height):
                             tensor.size(-1))
     return tensor.transpose(2, 3).transpose(1, 2)
 
-def get_reshape_transform():
+def get_reshape_transform(model, img_tensor):
     """Helper function to get the reshape transform for GradCAM."""
-    return reshape_gradcam_transform_cvt_huggingface
+    return partial(reshape_gradcam_transform_cvt_huggingface,
+                            model=model,
+                            width=img_tensor.shape[2]//16,
+                            height=img_tensor.shape[1]//16)
 
 
 def run_grad_cam_on_image(
@@ -193,7 +197,7 @@ async def run_model(
 
         model_wrapper_class = get_model_to_tensor_wrapper_class()
         target_layers = get_target_layers_for_grad_cam(model)
-        reshape_transform = get_reshape_transform()
+        reshape_transform = get_reshape_transform(model, normalized_image_tensor)
 
         # Perform inference
         print("Running GradCAM...")
@@ -260,7 +264,7 @@ async def profile_run(
 
         model_wrapper_class = get_model_to_tensor_wrapper_class()
         target_layers = get_target_layers_for_grad_cam(model)
-        reshape_transform = get_reshape_transform()
+        reshape_transform = get_reshape_transform(model, normalized_image_tensor)
 
         # perform profiling
         with profile(
