@@ -5,7 +5,7 @@
     "task_detail": "The \"nvidia/mit-b0\" model is a pre-trained AI model specifically designed for fine-tuning in the field of semantic segmentation, primarily leveraging its robust hierarchical Transformer encoder. This model was initially developed as part of the SegFormer framework and fine-tuned on the ImageNet-1k dataset. It is built to tackle semantic segmentation tasks by identifying and classifying various segments within an image, such as distinguishing different objects within a scene.\n\n### Model Functionality:\n\n- **Input Format:** The model accepts images as input. These should typically be provided as a PIL image or a similar format that can be processed by image handling libraries in Python. The images are expected to be in RGB format and of adequate resolution to ensure detailed feature extraction.\n\n- **Image Classification and Segmentation:** Although the model is pre-trained on ImageNet-1k and suitable for image classification tasks\u2014categorizing images into one of the 1,000 ImageNet classes\u2014it is primarily designed to be fine-tuned for semantic segmentation tasks. This involves partitioning an image into regions of interest and assigning a label to each region based on the image content.\n\n- **Hierarchical Transformer Encoder:** The core component of this model is its hierarchical Transformer encoder, which efficiently captures multi-scale information crucial for understanding complex image structures. This architecture allows it to perform well on semantic segmentation benchmarks such as ADE20K and Cityscapes.\n\n- **Output Format:** The outputs of the model are logits, which are raw prediction scores. In a classification task, these scores are processed to determine the class with the highest probability. For semantic segmentation, the logits would be processed further to identify the boundaries and classes of objects within an image.\n\n- **Use Case Flexibility:** While the pre-trained model can perform image classification independently, its primary utility lies in its adaptability through fine-tuning for diverse segmentation tasks. Users can adapt the model to specific applications by training it further on targeted datasets to enhance its performance in specialized domains.\n\nThis versatile model serves researchers and developers involved in computer vision applications, allowing them to apply cutting-edge transformer-based segmentation techniques to a range of practical problems involving automatic image analysis and interpretation.",
     "accuracy_info": "No accuracy information found.",
     "image_repository_url": "docker.io/cranfield6g/cranfield-edge-nvidia-mit-b0",
-    "service_disk_size_bytes": 0,
+    "service_disk_size_bytes": 3609359151,
     "profiles": [
         {
             "node_id": "LAP004262",
@@ -154,7 +154,21 @@
                 }
             ],
             "idle_container_cpu_memory_usage": "2GB",
-            "idle_container_device_memory_usage": "0GB"
+            "idle_container_device_memory_usage": "0GB",
+            "inference": {
+                "cpu_time_ms": 134.25077199999998,
+                "device_time_ms": 0.0,
+                "cpu_memory_usage_MB": 0.003814697265625,
+                "self_cpu_memory_usage_MB": -363.255859375,
+                "device_memory_usage_MB": 0.0,
+                "self_device_memory_usage_MB": 0.0,
+                "energy_consumption_execution": 0,
+                "disk_IO_MB": 0,
+                "input_data_MB": 0,
+                "output_data_MB": 0,
+                "execution_time_ms": 226.69315338134766,
+                "execution_cost": 0
+            }
         }
     ],
     "feedback": {
