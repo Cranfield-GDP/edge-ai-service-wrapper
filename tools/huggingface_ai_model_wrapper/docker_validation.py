@@ -14,6 +14,44 @@ from utils import (
 )
 
 
+def build_ai_service_base_image() -> None:
+    # --------------------------------
+    # get the base image directory
+    # --------------------------------
+    base_image_file = "Dockerfile.ai_service_base"
+    base_image_name = "python3.12_ai_service_base"
+    base_image_tag = "latest"
+
+    docker_file_directory = os.path.join(
+        os.path.dirname(__file__),
+        "common_assets",
+    )
+    docker_file_path = os.path.join(docker_file_directory, base_image_file)
+
+    assert os.path.exists(
+        docker_file_path
+    ), f"The base image docker file '{docker_file_path}' does not exist."
+
+    # --------------------------------
+    # Build the base image
+    # ---------------------------------
+
+    subprocess.run(
+        [
+            "docker",
+            "build",
+            "-t",
+            f"{base_image_name}:{base_image_tag}",
+            "-f",
+            base_image_file,
+            ".",
+        ],
+        cwd=docker_file_directory,
+        check=True,
+    )
+    print(f"Base image {base_image_name}:{base_image_tag} built successfully.")
+
+
 def build_and_start_docker_container(huggingface_model_name: str) -> None:
     # --------------------------------
     # get the model directory
@@ -107,37 +145,50 @@ def update_container_memory_usage(huggingface_model_name: str) -> None:
     # --------------------------------
     # Read the service_data.json
     # ---------------------------------
-    service_data_json_path = os.path.join(
-        hf_model_directory, SERVICE_DATA_JSON_NAME
-    )
+    service_data_json_path = os.path.join(hf_model_directory, SERVICE_DATA_JSON_NAME)
     assert os.path.exists(
         service_data_json_path
     ), f"The service data json file '{service_data_json_path}' does not exist."
 
     with open(service_data_json_path, "r") as f:
         service_data = json.load(f)
-    
-    assert "profiles" in service_data and len(service_data["profiles"]) > 0, "No profiles found in service_data.json"
-    
+
+    assert (
+        "profiles" in service_data and len(service_data["profiles"]) > 0
+    ), "No profiles found in service_data.json"
+
     node_id_list = [
-        profile["node_id"] for profile in service_data["profiles"]
+        profile["node_id"]
+        for profile in service_data["profiles"]
         if "node_id" in profile
     ]
 
-    node_id_to_update = input("Please select a node id to update, available node ids are: " + str(node_id_list) + ": (if emtpy, the first one will be selected by default) ")
+    node_id_to_update = input(
+        "Please select a node id to update, available node ids are: "
+        + str(node_id_list)
+        + ": (if emtpy, the first one will be selected by default) "
+    )
     if not node_id_to_update or not node_id_to_update.strip():
         node_id_to_update = node_id_list[0]
-    
-    assert node_id_to_update in node_id_list, f"The node id '{node_id_to_update}' is not valid."
 
-    idle_container_cpu_memory_usage = input("Please enter the container's CPU memory usage in string (e.g., 300KB, 70MB, 1.5GB ...): ")
-    idle_container_device_memory_usage = input("Please enter the container's device (accelerator device such as GPU, FPGA ...) memory usage in string (e.g., 300KB, 70MB, 1.5GB ...): ")
+    assert (
+        node_id_to_update in node_id_list
+    ), f"The node id '{node_id_to_update}' is not valid."
+
+    idle_container_cpu_memory_usage = input(
+        "Please enter the container's CPU memory usage in string (e.g., 300KB, 70MB, 1.5GB ...): "
+    )
+    idle_container_device_memory_usage = input(
+        "Please enter the container's device (accelerator device such as GPU, FPGA ...) memory usage in string (e.g., 300KB, 70MB, 1.5GB ...): "
+    )
 
     # update the profile
     for profile in service_data["profiles"]:
         if profile["node_id"] == node_id_to_update:
             profile["idle_container_cpu_memory_usage"] = idle_container_cpu_memory_usage
-            profile["idle_container_device_memory_usage"] = idle_container_device_memory_usage
+            profile["idle_container_device_memory_usage"] = (
+                idle_container_device_memory_usage
+            )
             break
     # write the updated profile back to the json file
     with open(service_data_json_path, "w") as f:

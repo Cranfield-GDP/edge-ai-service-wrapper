@@ -1,7 +1,9 @@
 import sys
+from rich.console import Console
+from rich.table import Table
 import subprocess
 from code_generation import code_generation_main
-from docker_validation import build_and_start_docker_container, update_container_memory_usage
+from docker_validation import build_ai_service_base_image, build_and_start_docker_container, update_container_memory_usage
 from docker_image_upload import push_docker_image_main
 import traceback
 from utils import (
@@ -13,6 +15,12 @@ from utils import (
 
 huggingface_model_name_default = "microsoft/resnet-50"  # Example model name
 huggingface_model_name = huggingface_model_name_default
+
+def option_build_service_base_image():
+    """Build the base image for the AI service."""
+    global huggingface_model_name
+    build_ai_service_base_image()
+    print("Base image build completed successfully.")
 
 def option_code_generation():
     """Generate codes to wrap a given AI model into a FastAPI service."""
@@ -127,6 +135,10 @@ def option_update_container_memory_usage():
 
 OPTIONS = [
     {
+        "label": "Build the base image for the AI service",
+        "function": option_build_service_base_image,
+    },
+    {
         "label": "Generate codes to wrap a given AI model into a FastAPI service",
         "function": option_code_generation,
     },
@@ -162,31 +174,43 @@ OPTIONS = [
 
 
 def main():
+
+    console = Console()
+
     while True:
-        print("\nSelect an option:")
+        # Create a Rich table for the options
+        table = Table(title="AI Service Options")
+        table.add_column("Option", justify="center", style="cyan", no_wrap=True)
+        table.add_column("Description", style="yellow")
+
         for i, option in enumerate(OPTIONS, start=1):
-            print(f"{i}. {option['label']}")
-        print("q. Quit")
-        
+            table.add_row(str(i), option["label"])
+            # Add a separator row for better readability
+            table.add_row("", "[dim]-----------------------------[/dim]")
+
+        # Add the Quit option at the end
+        table.add_row("q", "Quit")
+
+        # Print the table
+        console.print(table)
+
         try:
-            choice = input("Enter your choice (1-7): ").strip()
+            choice = input("Enter your choice (1-7 or 'q' to quit): ").strip()
             
             if choice == "q":
-                print("Exiting the program. Goodbye!")
+                console.print("[bold green]Exiting the program. Goodbye![/bold green]")
                 sys.exit(0)
             elif choice.isdigit() and 1 <= int(choice) <= len(OPTIONS):
                 option = OPTIONS[int(choice) - 1]
-                print(f"Executing: {option['label']}")
+                console.print(f"[bold yellow]Executing:[/bold yellow] {option['label']}")
                 option["function"]()
             else:
-                print("Invalid choice. Please select a valid option (1-7).")
+                console.print("[bold red]Invalid choice. Please select a valid option (1-7 or 'q').[/bold red]")
         
         except Exception as e:
-            print(f"An error occurred: {e}")
-            # print the stack trace for debugging
+            console.print(f"[bold red]An error occurred:[/bold red] {e}")
             traceback.print_exc()
-            print("Please try again.")
-            print("Returning to the main menu...")
+            console.print("[bold red]Returning to the main menu...[/bold red]")
 
 if __name__ == "__main__":
     main()

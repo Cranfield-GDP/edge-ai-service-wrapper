@@ -1,39 +1,16 @@
-# Do Not Separate Builder and Runtime Stages
-FROM python:3.12-slim 
-
-# Install common dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    libgl1 \
-    libglib2.0-0 \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install Python dependencies
-RUN pip install --no-cache-dir --upgrade pip
-RUN pip install --no-cache-dir \
-    fastapi \
-    uvicorn[standard] \
-    torch \
-    torchvision \
-    opencv-python \
-    opencv-python-headless \
-    accelerate \
-    transformers \
-    python-multipart \
-    Pillow \
-    psutil \
-    requests \
-    datasets
-
-# Install XAI libraries.
-# Currently only XAI for image-classification models in pytorch is supported.
-RUN pip install --no-cache-dir grad-cam
+# Base image for AI service powered by HuggingFace pre-trained AI models.
+# the image has the following packages/libraries installed already:
+# - python3.12, pip, git, fastapi, uvicorn, torch, torchvision, opencv-python, transformers, python-multipart, Pillow, requests
+FROM python3.12_ai_service_base:latest
 
 # Set working directory
 WORKDIR /app
 
 # Copy application code
 COPY . .
+
+# Install additional dependencies
+RUN pip install datasets
 
 # Expose port 8000
 EXPOSE 8000
