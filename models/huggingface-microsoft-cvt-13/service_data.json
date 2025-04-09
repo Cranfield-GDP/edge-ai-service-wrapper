@@ -5,7 +5,7 @@
     "task_detail": "The pre-trained AI model \"microsoft/cvt-13\" is a Convolutional Vision Transformer (CvT) specifically designed for the task of image classification. It has been pre-trained on the ImageNet-1k dataset, featuring 1,000 distinct classes, which encompasses a broad spectrum of common objects, animals, and scenes that one might encounter in various environments.\n\n### Functionality Description\n\n**Image Classification Capability:**\nThe \"microsoft/cvt-13\" model is capable of classifying input images into one of 1,000 classes defined in the ImageNet-1k dataset. This extensive dataset covers numerous categories ranging from different animal species, everyday objects, to various natural and human-made scenes. This makes the model highly versatile for general-purpose image classification within applications requiring such granularity and diversity.\n\n**Input Requirements:**\n- **Image Resolution:** The model expects input images to be of 224x224 pixels. This resolution ensures that the images are appropriately processed within the model's architecture to extract relevant features effectively.\n- **Image Format:** Images should be provided in a standard format that can be represented through the Python Imaging Library (PIL), like JPEG or PNG.\n- **Preprocessing:** Prior to model ingestion, images need to be processed using an appropriate feature extractor, such as `AutoFeatureExtractor` from the Hugging Face Transformers library, which prepares the image data into a format suitable for the model.\n\n**Output Details:**\n- The model outputs classification logits representing the raw, unnormalized prediction scores across the 1,000 classes. \n- Post-processing involves converting these logits into a predicted class index, which can be mapped to human-readable class labels using the `id2label` dictionary provided in the model's configuration. This dictionary helps translate model outputs into recognizable labels for use in downstream applications.\n  \nThis model's application spans various domains requiring image classification, such as digital asset management, automated tagging systems, and content-based image retrieval. Its robustness in handling rich visual content makes it ideal for these and other related use cases where semantic understanding of images is crucial.",
     "accuracy_info": "No accuracy information found.",
     "image_repository_url": "docker.io/cranfield6g/cranfield-edge-microsoft-cvt-13",
-    "service_disk_size_bytes": 0,
+    "service_disk_size_bytes": 3609178017,
     "profiles": [
         {
             "node_id": "LAP004262",
@@ -154,7 +154,21 @@
                 }
             ],
             "idle_container_cpu_memory_usage": "1.5GB",
-            "idle_container_device_memory_usage": "0GB"
+            "idle_container_device_memory_usage": "0GB",
+            "inference": {
+                "cpu_time_ms": 107.864402,
+                "device_time_ms": 0.0,
+                "cpu_memory_usage_MB": 0.003814697265625,
+                "self_cpu_memory_usage_MB": -150.96855545043945,
+                "device_memory_usage_MB": 0.0,
+                "self_device_memory_usage_MB": 0.0,
+                "energy_consumption_execution": 0,
+                "disk_IO_MB": 0,
+                "input_data_MB": 0,
+                "output_data_MB": 0,
+                "execution_time_ms": 347.1478621164958,
+                "execution_cost": 0
+            }
         }
     ],
     "feedback": {
