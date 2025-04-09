@@ -1,3 +1,4 @@
+from functools import partial
 from typing import Callable, List, Optional
 from fastapi import APIRouter, File, Form, UploadFile
 from fastapi.responses import JSONResponse
@@ -36,15 +37,12 @@ from ai_server_utils import (
 
 # Currently only support GradCAM on image-classification models.
 # so we import the model directly from the model.py file
-from model import model, MODEL_NAME
+from model import model, processor as resize_and_normalize_processor
 
 
-resize_and_normalize_processor = AutoImageProcessor.from_pretrained(
-    MODEL_NAME, use_fast=True
-)
 resize_only_processor = transforms.Compose(
     [
-        transforms.Resize((224, 224)),
+        transforms.Resize((384, 384)),
         transforms.ToTensor(),
     ],
 )
@@ -82,17 +80,27 @@ def get_model_to_tensor_wrapper_class():
 
 def get_target_layers_for_grad_cam(model: torch.nn.Module):
     """Helper function to get the target layer for GradCAM."""
-    return [model.resnet.encoder.stages[-1].layers[-1]]
+    return [model.swin.layernorm]
 
 
 def get_classifier_output_target_class():
     """Helper function to get the classifier output target class."""
     return ClassifierOutputTarget
 
+def swinT_reshape_transform_huggingface(tensor, width, height):
+    result = tensor.reshape(tensor.size(0),
+                            height,
+                            width,
+                            tensor.size(2))
+    result = result.transpose(2, 3).transpose(1, 2)
+    return result
 
-def get_reshape_transform():
+
+def get_reshape_transform(img_tensor):
     """Helper function to get the reshape transform for GradCAM."""
-    return None
+    return partial(swinT_reshape_transform_huggingface,
+                            width=img_tensor.shape[2]//32,
+                            height=img_tensor.shape[1]//32)
 
 
 def run_grad_cam_on_image(
@@ -185,7 +193,7 @@ async def run_model(
 
         model_wrapper_class = get_model_to_tensor_wrapper_class()
         target_layers = get_target_layers_for_grad_cam(model)
-        reshape_transform = get_reshape_transform()
+        reshape_transform = get_reshape_transform(normalized_image_tensor)
 
         # Perform inference
         print("Running GradCAM...")
@@ -252,7 +260,7 @@ async def profile_run(
 
         model_wrapper_class = get_model_to_tensor_wrapper_class()
         target_layers = get_target_layers_for_grad_cam(model)
-        reshape_transform = get_reshape_transform()
+        reshape_transform = get_reshape_transform(normalized_image_tensor)
 
         # perform profiling
         with profile(

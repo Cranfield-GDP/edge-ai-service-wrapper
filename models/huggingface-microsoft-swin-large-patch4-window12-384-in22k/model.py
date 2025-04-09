@@ -11,7 +11,7 @@ from torch.profiler import profile, record_function
 import torch
 from fastapi import APIRouter, File, Form, UploadFile
 from fastapi.responses import JSONResponse
-from transformers import AutoFeatureExtractor, SwinForImageClassification
+from transformers import AutoImageProcessor, SwinForImageClassification
 from PIL import Image
 
 # --------------------------------
@@ -19,7 +19,7 @@ from PIL import Image
 # make sure the variables `MODEL_NAME` and `model` are defined here.
 # --------------------------------
 MODEL_NAME = "microsoft/swin-large-patch4-window12-384-in22k"
-feature_extractor = AutoFeatureExtractor.from_pretrained(MODEL_NAME)
+processor = AutoImageProcessor.from_pretrained(MODEL_NAME)
 model = SwinForImageClassification.from_pretrained(MODEL_NAME)
 model.eval()
 
@@ -31,7 +31,7 @@ async def run_model(file: UploadFile = File(...), ue_id: str = Form(...)):
     try:
         # Prepare the model input
         image = Image.open(file.file).convert("RGB")
-        inputs = feature_extractor(images=image, return_tensors="pt")
+        inputs = processor(images=image, return_tensors="pt")
 
         # Perform inference
         with torch.no_grad():
@@ -61,7 +61,7 @@ async def profile_run(file: UploadFile = File(...), ue_id: str = Form(...)):
     try:
         # Prepare the model input
         image = Image.open(file.file).convert("RGB")
-        inputs = feature_extractor(images=image, return_tensors="pt")
+        inputs = processor(images=image, return_tensors="pt")
 
         # perform profiling
         with profile(
