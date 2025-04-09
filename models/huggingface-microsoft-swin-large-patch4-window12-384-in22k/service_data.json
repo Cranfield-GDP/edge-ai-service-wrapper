@@ -5,7 +5,7 @@
     "task_detail": "The Microsoft Swin-Large-Patch4-Window12-384-IN22K model is a state-of-the-art pre-trained AI model specifically designed for various vision tasks, primarily focusing on image classification. The model employs a unique Swin Transformer architecture that enhances its efficiency and effectiveness in handling large-scale visual recognition scenarios.\n\n### Functionality Description\n\n#### Image Classification Capabilities:\n- The Swin Transformer model has been pre-trained on the extensive ImageNet-21k dataset, which comprises approximately 14 million images across 21,841 distinct classes. This diverse range allows the model to recognize a broad spectrum of objects and scenes.\n- It is particularly adept at classifying images from the ImageNet dataset, which includes an extensive variety of categories ranging from everyday objects to intricate scenes.\n\n#### Model Input:\n- The expected input for the model is an image with a resolution of 384x384 pixels. Input images should be pre-processed to match this resolution to ensure optimal performance.\n- The input format is typically an image file that can be uploaded directly or accessed via a URL. Such files are usually colored (RGB) images processed into appropriate tensors for model compatibility.\n\n#### Output Format:\n- The model outputs a set of logits corresponding to the likelihood of the image belonging to each of the 1,000 predefined ImageNet classes.\n- The highest-scoring class from the logits indicates the model\u2019s predicted classification. This final output is often represented by the class index and associated label, providing an interpretable result such as \"Tiger\" or \"Teapot\", depending on the image content.\n\n#### Underlying Architecture:\n- Swin Transformer stands out by implementing a hierarchical structure with shifted windows, differentiating it from conventional ViT models that rely on global attention.\n- This architecture enables it to produce hierarchical feature maps, allowing efficient handling of varied visual recognition tasks and significantly reducing computation complexity, making it suitable as a universal backbone for both high-level image classification and detailed dense prediction tasks.\n\n#### Use Cases:\n- This model can be leveraged in applications requiring robust image classification, such as automated image tagging, content moderation, and visual search engines.\n- Its ability to distinguish finely between numerous classes makes it ideal for sectors like retail and e-commerce, where precise product categorization is vital.\n- Furthermore, the model serves as an exceptional starting point for fine-tuning in specialized classification tasks across various domains.\n\nThe versatility and efficiency of the Swin Transformer model make it a powerful tool for transforming visual data into actionable insights, catering to a multitude of applications needing accurate and scalable image classification solutions.",
     "accuracy_info": "No accuracy information found.",
     "image_repository_url": "docker.io/cranfield6g/cranfield-edge-microsoft-swin-large-patch4-window12-384-in22k",
-    "service_disk_size_bytes": 0,
+    "service_disk_size_bytes": 3609259807,
     "profiles": [
         {
             "node_id": "LAP004262",
@@ -154,7 +154,21 @@
                 }
             ],
             "idle_container_cpu_memory_usage": "7GB",
-            "idle_container_device_memory_usage": "0GB"
+            "idle_container_device_memory_usage": "0GB",
+            "inference": {
+                "cpu_time_ms": 1281.9471700000001,
+                "device_time_ms": 0.0,
+                "cpu_memory_usage_MB": 0.08331680297851562,
+                "self_cpu_memory_usage_MB": -2419.00634765625,
+                "device_memory_usage_MB": 0.0,
+                "self_device_memory_usage_MB": 0.0,
+                "energy_consumption_execution": 0,
+                "disk_IO_MB": 0,
+                "input_data_MB": 0,
+                "output_data_MB": 0,
+                "execution_time_ms": 1854.3468316396077,
+                "execution_cost": 0
+            }
         }
     ],
     "feedback": {
