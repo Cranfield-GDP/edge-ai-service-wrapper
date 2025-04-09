@@ -250,9 +250,9 @@ async def profile_run(
         ), f"GradCAM method '{gradcam_method_name}' is not supported. "
         gradcam_method = GRADCAM_METHODS[gradcam_method_name]
 
-        model_wrapper_class = get_model_to_tensor_wrapper_class(MODEL_NAME)
-        target_layers = get_target_layers_for_grad_cam(MODEL_NAME, model)
-        reshape_transform = get_reshape_transform(MODEL_NAME, model)
+        model_wrapper_class = get_model_to_tensor_wrapper_class()
+        target_layers = get_target_layers_for_grad_cam(model)
+        reshape_transform = get_reshape_transform()
 
         # perform profiling
         with profile(
