@@ -135,7 +135,7 @@ def run_grad_cam_on_image(
             # adjust the shape of the input_image from (3, 244, 244) to (244, 244, 3)
             visualization = show_cam_on_image(
                 np.float32(input_image.permute(1, 2, 0).numpy()),
-                grayscale_cam.cpu(),
+                grayscale_cam,
                 use_rgb=True,
             )
             results.append(visualization)
