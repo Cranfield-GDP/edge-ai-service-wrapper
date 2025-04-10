@@ -15,12 +15,17 @@ from transformers import AutoImageProcessor, ResNetForImageClassification
 from PIL import Image
 
 # --------------------------------
+# Device configuration
+# --------------------------------
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+# --------------------------------
 # Model-specific configuration
 # make sure the variables `MODEL_NAME` and `model` are defined here.
 # --------------------------------
 MODEL_NAME = "microsoft/resnet-50"
 processor = AutoImageProcessor.from_pretrained(MODEL_NAME, use_fast=True)
-model = ResNetForImageClassification.from_pretrained(MODEL_NAME)
+model = ResNetForImageClassification.from_pretrained(MODEL_NAME).to(device)
 model.eval()
 
 # Initialize the FastAPI router
@@ -31,7 +36,7 @@ async def run_model(file: UploadFile = File(...), ue_id: str = Form(...)):
     try:
         # Prepare the model input
         image = Image.open(file.file).convert("RGB")
-        inputs = processor(images=image, return_tensors="pt")
+        inputs = processor(images=image, return_tensors="pt").to(device)
 
         # Perform inference
         with torch.no_grad():
@@ -61,7 +66,7 @@ async def profile_run(file: UploadFile = File(...), ue_id: str = Form(...)):
     try:
         # Prepare the model input
         image = Image.open(file.file).convert("RGB")
-        inputs = processor(images=image, return_tensors="pt")
+        inputs = processor(images=image, return_tensors="pt").to(device)
 
         # perform profiling
         with profile(
