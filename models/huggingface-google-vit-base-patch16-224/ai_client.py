@@ -15,7 +15,7 @@ XAI_GRADCAM_METHODS = [
     "HiResCAM",
     "XGradCAM",
     "GradCAMPlusPlus",
-    # "ScoreCAM",
+    "ScoreCAM",
     "LayerCAM",
     "EigenCAM",
     "EigenGradCAM",
