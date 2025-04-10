@@ -36,7 +36,7 @@ from ai_server_utils import (
 
 # Currently only support GradCAM on image-classification models.
 # so we import the model directly from the model.py file
-from model import model, MODEL_NAME
+from model import model, MODEL_NAME, device
 
 
 resize_and_normalize_processor = AutoImageProcessor.from_pretrained(
@@ -168,8 +168,8 @@ async def run_model(
         image = Image.open(file.file).convert("RGB")
         normalized_image_tensor = resize_and_normalize_processor(
             images=image, return_tensors="pt"
-        )["pixel_values"].squeeze(0)
-        original_image_tensor = resize_only_processor(image)
+        )["pixel_values"].squeeze(0).to(device)
+        original_image_tensor = resize_only_processor(image).to(device)
 
         if target_category_indexes is None or len(target_category_indexes) == 0:
             targets_for_gradcam = None
@@ -235,8 +235,8 @@ async def profile_run(
         image = Image.open(file.file).convert("RGB")
         normalized_image_tensor = resize_and_normalize_processor(
             images=image, return_tensors="pt"
-        )["pixel_values"].squeeze(0)
-        original_image_tensor = resize_only_processor(image)
+        )["pixel_values"].squeeze(0).to(device)
+        original_image_tensor = resize_only_processor(image).to(device)
         if target_category_indexes is None or len(target_category_indexes) == 0:
             targets_for_gradcam = None
         else:
