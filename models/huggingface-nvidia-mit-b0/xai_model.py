@@ -110,8 +110,8 @@ def run_grad_cam_on_image(
     target_layers: List[torch.nn.Module],
     targets_for_gradcam: Optional[List[Callable]],
     reshape_transform: Optional[Callable],
-    input_tensor: torch.nn.Module,
-    input_image: Image,
+    input_tensor: torch.Tensor,
+    input_image: torch.Tensor,
     gradcam_method: Callable,
 ):
     """Helper function to run GradCAM on an image and create a visualization.

@@ -96,8 +96,8 @@ def run_grad_cam_on_image(
     target_layers: List[torch.nn.Module],
     targets_for_gradcam: Optional[List[Callable]],
     reshape_transform: Optional[Callable],
-    input_tensor: torch.nn.Module,
-    input_image: Image,
+    input_tensor: torch.Tensor,
+    input_image: torch.Tensor,
     gradcam_method: Callable,
 ):
     """Helper function to run GradCAM on an image and create a visualization.
@@ -135,7 +135,7 @@ def run_grad_cam_on_image(
             # adjust the shape of the input_image from (3, 244, 244) to (244, 244, 3)
             visualization = show_cam_on_image(
                 np.float32(input_image.permute(1, 2, 0).numpy()),
-                grayscale_cam,
+                grayscale_cam.cpu(),
                 use_rgb=True,
             )
             results.append(visualization)
@@ -165,7 +165,8 @@ async def run_model(
         normalized_image_tensor = resize_and_normalize_processor(
             images=image, return_tensors="pt"
         )["pixel_values"].squeeze(0).to(device)
-        original_image_tensor = resize_only_processor(image).to(device)
+
+        original_image_tensor = resize_only_processor(image)
 
         if target_category_indexes is None or len(target_category_indexes) == 0:
             targets_for_gradcam = None
@@ -229,10 +230,12 @@ async def profile_run(
     try:
         # Prepare the model input
         image = Image.open(file.file).convert("RGB")
+        
         normalized_image_tensor = resize_and_normalize_processor(
             images=image, return_tensors="pt"
         )["pixel_values"].squeeze(0).to(device)
-        original_image_tensor = resize_only_processor(image).to(device)
+
+        original_image_tensor = resize_only_processor(image)
         if target_category_indexes is None or len(target_category_indexes) == 0:
             targets_for_gradcam = None
         else:
