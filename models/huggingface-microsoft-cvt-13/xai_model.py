@@ -37,12 +37,8 @@ from ai_server_utils import (
 
 # Currently only support GradCAM on image-classification models.
 # so we import the model directly from the model.py file
-from model import model, MODEL_NAME
+from model import model, device, processor as resize_and_normalize_processor
 
-
-resize_and_normalize_processor = AutoImageProcessor.from_pretrained(
-    MODEL_NAME, use_fast=True
-)
 resize_only_processor = transforms.Compose(
     [
         transforms.Resize((224, 224)),
@@ -92,19 +88,19 @@ def get_classifier_output_target_class():
 
 
 def reshape_gradcam_transform_cvt_huggingface(tensor, model, width, height):
-    tensor = tensor[:, 1 :, :]
-    tensor = tensor.reshape(tensor.size(0),
-                            height,
-                            width,
-                            tensor.size(-1))
+    tensor = tensor[:, 1:, :]
+    tensor = tensor.reshape(tensor.size(0), height, width, tensor.size(-1))
     return tensor.transpose(2, 3).transpose(1, 2)
+
 
 def get_reshape_transform(model, img_tensor):
     """Helper function to get the reshape transform for GradCAM."""
-    return partial(reshape_gradcam_transform_cvt_huggingface,
-                            model=model,
-                            width=img_tensor.shape[2]//16,
-                            height=img_tensor.shape[1]//16)
+    return partial(
+        reshape_gradcam_transform_cvt_huggingface,
+        model=model,
+        width=img_tensor.shape[2] // 16,
+        height=img_tensor.shape[1] // 16,
+    )
 
 
 def run_grad_cam_on_image(
@@ -178,9 +174,13 @@ async def run_model(
         # Prepare the model input
         print("Preparing the model input...")
         image = Image.open(file.file).convert("RGB")
-        normalized_image_tensor = resize_and_normalize_processor(
-            images=image, return_tensors="pt"
-        )["pixel_values"].squeeze(0)
+        normalized_image_tensor = (
+            resize_and_normalize_processor(images=image, return_tensors="pt")[
+                "pixel_values"
+            ]
+            .squeeze(0)
+            .to(device)
+        )
         original_image_tensor = resize_only_processor(image)
 
         if target_category_indexes is None or len(target_category_indexes) == 0:
@@ -245,9 +245,13 @@ async def profile_run(
     try:
         # Prepare the model input
         image = Image.open(file.file).convert("RGB")
-        normalized_image_tensor = resize_and_normalize_processor(
-            images=image, return_tensors="pt"
-        )["pixel_values"].squeeze(0)
+        normalized_image_tensor = (
+            resize_and_normalize_processor(images=image, return_tensors="pt")[
+                "pixel_values"
+            ]
+            .squeeze(0)
+            .to(device)
+        )
         original_image_tensor = resize_only_processor(image)
         if target_category_indexes is None or len(target_category_indexes) == 0:
             targets_for_gradcam = None

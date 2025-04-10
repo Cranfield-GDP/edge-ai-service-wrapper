@@ -22,9 +22,8 @@ from PIL import Image
 import numpy as np
 import torch
 from torchvision import transforms
-from transformers import AutoImageProcessor
 from typing import List, Optional
-from model import processor as resize_and_normalize_processor
+
 
 # import model utilities
 from ai_server_utils import (
@@ -36,7 +35,7 @@ from ai_server_utils import (
 
 # Currently only support GradCAM on image-classification models.
 # so we import the model directly from the model.py file
-from model import model, MODEL_NAME
+from model import model, device, processor as resize_and_normalize_processor
 
 resize_only_processor = transforms.Compose(
     [
@@ -87,8 +86,7 @@ def get_classifier_output_target_class():
 
 def reshape_transform_vit_huggingface(x):
     activations = x[:, 1:, :]
-    activations = activations.view(activations.shape[0],
-                                   14, 14, activations.shape[2])
+    activations = activations.view(activations.shape[0], 14, 14, activations.shape[2])
     activations = activations.transpose(2, 3).transpose(1, 2)
     return activations
 
@@ -169,9 +167,13 @@ async def run_model(
         # Prepare the model input
         print("Preparing the model input...")
         image = Image.open(file.file).convert("RGB")
-        normalized_image_tensor = resize_and_normalize_processor(
-            images=image, return_tensors="pt"
-        )["pixel_values"].squeeze(0)
+        normalized_image_tensor = (
+            resize_and_normalize_processor(images=image, return_tensors="pt")[
+                "pixel_values"
+            ]
+            .squeeze(0)
+            .to(device)
+        )
         original_image_tensor = resize_only_processor(image)
 
         if target_category_indexes is None or len(target_category_indexes) == 0:
@@ -236,9 +238,13 @@ async def profile_run(
     try:
         # Prepare the model input
         image = Image.open(file.file).convert("RGB")
-        normalized_image_tensor = resize_and_normalize_processor(
-            images=image, return_tensors="pt"
-        )["pixel_values"].squeeze(0)
+        normalized_image_tensor = (
+            resize_and_normalize_processor(images=image, return_tensors="pt")[
+                "pixel_values"
+            ]
+            .squeeze(0)
+            .to(device)
+        )
         original_image_tensor = resize_only_processor(image)
         if target_category_indexes is None or len(target_category_indexes) == 0:
             targets_for_gradcam = None

@@ -35,8 +35,7 @@ from ai_server_utils import (
 
 # Currently only support GradCAM on image-classification models.
 # so we import the model directly from the model.py file
-from model import model, processor as resize_and_normalize_processor, device
-
+from model import model, device, processor as resize_and_normalize_processor
 
 resize_only_processor = transforms.Compose(
     [
@@ -162,10 +161,13 @@ async def run_model(
         # Prepare the model input
         print("Preparing the model input...")
         image = Image.open(file.file).convert("RGB")
-        normalized_image_tensor = resize_and_normalize_processor(
-            images=image, return_tensors="pt"
-        )["pixel_values"].squeeze(0).to(device)
-
+        normalized_image_tensor = (
+            resize_and_normalize_processor(images=image, return_tensors="pt")[
+                "pixel_values"
+            ]
+            .squeeze(0)
+            .to(device)
+        )
         original_image_tensor = resize_only_processor(image)
 
         if target_category_indexes is None or len(target_category_indexes) == 0:
@@ -230,11 +232,13 @@ async def profile_run(
     try:
         # Prepare the model input
         image = Image.open(file.file).convert("RGB")
-        
-        normalized_image_tensor = resize_and_normalize_processor(
-            images=image, return_tensors="pt"
-        )["pixel_values"].squeeze(0).to(device)
-
+        normalized_image_tensor = (
+            resize_and_normalize_processor(images=image, return_tensors="pt")[
+                "pixel_values"
+            ]
+            .squeeze(0)
+            .to(device)
+        )
         original_image_tensor = resize_only_processor(image)
         if target_category_indexes is None or len(target_category_indexes) == 0:
             targets_for_gradcam = None

@@ -23,7 +23,6 @@ from PIL import Image
 import numpy as np
 import torch
 from torchvision import transforms
-from transformers import AutoImageProcessor
 from typing import List, Optional
 
 
@@ -37,7 +36,7 @@ from ai_server_utils import (
 
 # Currently only support GradCAM on image-classification models.
 # so we import the model directly from the model.py file
-from model import model, processor as resize_and_normalize_processor
+from model import model, device, processor as resize_and_normalize_processor
 
 resize_only_processor = transforms.Compose(
     [
@@ -86,10 +85,12 @@ def get_classifier_output_target_class():
     """Helper function to get the classifier output target class."""
     return ClassifierOutputTarget
 
+
 def reshape_gradcam_transform_convnext_huggingface(tensor, model):
     batch, features, height, width = tensor.shape
     tensor = tensor.transpose(1, 2).transpose(2, 3)
     return tensor.transpose(2, 3).transpose(1, 2)
+
 
 def get_reshape_transform(model):
     """Helper function to get the reshape transform for GradCAM."""
@@ -169,7 +170,7 @@ async def run_model(
         image = Image.open(file.file).convert("RGB")
         normalized_image_tensor = resize_and_normalize_processor(
             images=image, return_tensors="pt"
-        )["pixel_values"].squeeze(0)
+        )["pixel_values"].squeeze(0).to(device)
         original_image_tensor = resize_only_processor(image)
 
         if target_category_indexes is None or len(target_category_indexes) == 0:
@@ -236,7 +237,7 @@ async def profile_run(
         image = Image.open(file.file).convert("RGB")
         normalized_image_tensor = resize_and_normalize_processor(
             images=image, return_tensors="pt"
-        )["pixel_values"].squeeze(0)
+        )["pixel_values"].squeeze(0).to(device)
         original_image_tensor = resize_only_processor(image)
         if target_category_indexes is None or len(target_category_indexes) == 0:
             targets_for_gradcam = None
