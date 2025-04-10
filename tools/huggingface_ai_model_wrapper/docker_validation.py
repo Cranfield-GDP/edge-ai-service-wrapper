@@ -123,6 +123,8 @@ def build_and_start_docker_container(huggingface_model_name: str) -> None:
             f"NODE_ID={profile_node_id}",
             "-p",
             f"{available_port}:8000",
+            "--gpus",
+            "all",
             "--health-cmd",
             "python healthcheck.py",
             "--health-interval=5s",
