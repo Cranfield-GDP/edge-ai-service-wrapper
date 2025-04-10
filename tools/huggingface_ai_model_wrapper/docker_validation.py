@@ -70,6 +70,21 @@ def build_and_start_docker_container(huggingface_model_name: str) -> None:
     print("The model directory is valid.")
 
     # --------------------------------
+    # Ask the user whether to enable GPU
+    # --------------------------------
+    enable_gpu = (
+        input("Do you want to enable GPU for docker container? (y/n): ").strip().lower()
+    )
+    if enable_gpu == "y":
+        enable_gpu = True
+    elif enable_gpu == "n":
+        enable_gpu = False
+    else:
+        print("Invalid input. Defaulting to GPU support.")
+        enable_gpu = True
+    print(f"GPU support is {'enabled' if enable_gpu else 'disabled'}.")
+
+    # --------------------------------
     # Build the docker image
     # ---------------------------------
     docker_image_build_name = get_docker_image_build_name(huggingface_model_name)
@@ -110,9 +125,10 @@ def build_and_start_docker_container(huggingface_model_name: str) -> None:
     # --------------------------------
     # Run the docker container
     # ---------------------------------
-    available_port = get_available_port()
+    # available_port = get_available_port()
+    available_port = 9000
     profile_node_id = get_node_hostname()
-    subprocess.run(
+    cmd = (
         [
             "docker",
             "run",
@@ -123,21 +139,55 @@ def build_and_start_docker_container(huggingface_model_name: str) -> None:
             f"NODE_ID={profile_node_id}",
             "-p",
             f"{available_port}:8000",
-            "--gpus",
-            "all",
             "--health-cmd",
             "python healthcheck.py",
             "--health-interval=5s",
             "--health-timeout=2s",
             "--health-retries=3",
-            get_docker_image_build_name(huggingface_model_name),
-        ],
+        ]
+        + (["--gpus", "all"] if enable_gpu else [])
+        + [get_docker_image_build_name(huggingface_model_name)]
+    )
+    print(f"Running command: {' '.join(cmd)}")
+    subprocess.run(
+        cmd,
         check=True,
     )
     print(
         f"Docker container {get_docker_container_run_name(huggingface_model_name)}-server started successfully."
     )
     print(f"Access the server at http://localhost:{available_port}/run")
+
+
+def stop_docker_container(huggingface_model_name: str) -> None:
+    # --------------------------------
+    # get the model directory
+    # --------------------------------
+    hf_model_directory = get_hf_model_directory(huggingface_model_name)
+    # reset the model directory if it exists
+    assert os.path.exists(
+        hf_model_directory
+    ), f"The model directory '{hf_model_directory}' does not exist."
+    # check if all the required files exist
+    for file_name in NECESSARY_SERVICE_FILE_LIST:
+        file_path = os.path.join(hf_model_directory, file_name)
+        assert os.path.exists(
+            file_path
+        ), f"The required model file '{file_path}' does not exist."
+    print("The model directory is valid.")
+
+    # --------------------------------
+    # stop the docker container if it is running
+    # --------------------------------
+    container_name = get_docker_container_run_name(huggingface_model_name)
+    try:
+        subprocess.run(
+            ["docker", "stop", container_name],
+            check=True,
+        )
+        print(f"Docker container {container_name} stopped successfully.")
+    except subprocess.CalledProcessError:
+        print(f"Docker container {container_name} is not running.")
 
 
 def update_container_memory_usage(huggingface_model_name: str) -> None:

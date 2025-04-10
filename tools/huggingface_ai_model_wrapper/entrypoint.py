@@ -3,7 +3,7 @@ from rich.console import Console
 from rich.table import Table
 import subprocess
 from code_generation import code_generation_main
-from docker_validation import build_ai_service_base_image, build_and_start_docker_container, update_container_memory_usage
+from docker_validation import build_ai_service_base_image, build_and_start_docker_container, update_container_memory_usage, stop_docker_container
 from docker_image_upload import push_docker_image_main
 import traceback
 from utils import (
@@ -133,6 +133,20 @@ def option_update_container_memory_usage():
     except Exception as e:
         print(f"Error: {e}")
 
+def option_stop_docker_container():
+    """Stop the docker container."""
+    global huggingface_model_name
+
+    new_model_name = input(f"Enter the Hugging Face model name (default: {huggingface_model_name}): ")
+    if new_model_name.strip():
+        huggingface_model_name = new_model_name
+    try:
+        stop_docker_container(huggingface_model_name)
+        print("Docker container stopped successfully.")
+    except Exception as e:
+        print(f"Error: {e}")
+
+
 OPTIONS = [
     {
         "label": "Build the base image for the AI service",
@@ -169,6 +183,10 @@ OPTIONS = [
     {
         "label": "Update the AI service database",
         "function": option_update_ai_service_database,
+    },
+    {
+        "label": "Stop the docker container",
+        "function": option_stop_docker_container,
     },
 ]
 
