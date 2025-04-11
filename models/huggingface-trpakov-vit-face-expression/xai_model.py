@@ -47,7 +47,6 @@ resize_only_processor = transforms.Compose(
 GRADCAM_METHODS = {
     "GradCAM": GradCAM,
     "HiResCAM": HiResCAM,
-    "AblationCAM": AblationCAM,
     "XGradCAM": XGradCAM,
     "GradCAMPlusPlus": GradCAMPlusPlus,
     "ScoreCAM": ScoreCAM,
@@ -77,7 +76,7 @@ def get_model_to_tensor_wrapper_class():
 
 def get_target_layers_for_grad_cam(model: torch.nn.Module):
     """Helper function to get the target layer for GradCAM."""
-    return [model.resnet.encoder.stages[-1].layers[-1]]
+    return [model.vit.encoder.layer[-2].output]
 
 
 def get_classifier_output_target_class():
@@ -85,9 +84,16 @@ def get_classifier_output_target_class():
     return ClassifierOutputTarget
 
 
+def reshape_transform_vit_huggingface(x):
+    activations = x[:, 1:, :]
+    activations = activations.view(activations.shape[0], 14, 14, activations.shape[2])
+    activations = activations.transpose(2, 3).transpose(1, 2)
+    return activations
+
+
 def get_reshape_transform():
     """Helper function to get the reshape transform for GradCAM."""
-    return None
+    return reshape_transform_vit_huggingface
 
 
 def run_grad_cam_on_image(
