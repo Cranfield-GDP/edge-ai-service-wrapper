@@ -24,7 +24,7 @@ profile_activities = [
     ProfilerActivity.XPU,
 ]
 
-def process_model_output_logits(model, model_output_logits):
+def get_image_classification_results_from_model_output_logits(model, model_output_logits):
     """
     Process the model outputs to prepare for the response.
     """

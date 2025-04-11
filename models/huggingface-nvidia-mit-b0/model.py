@@ -1,6 +1,6 @@
 # import server utils
 from ai_server_utils import (
-    process_model_output_logits,
+    get_image_classification_results_from_model_output_logits,
     profile_activities,
     prepare_profile_results,
 )
@@ -46,7 +46,7 @@ async def run_model(file: UploadFile = File(...), ue_id: str = Form(...)):
             outputs = model(**inputs)
 
         # Process the model outputs
-        predictions = process_model_output_logits(model, outputs.logits)
+        predictions = get_image_classification_results_from_model_output_logits(model, outputs.logits)
 
         return JSONResponse(
             content={
@@ -84,7 +84,7 @@ async def profile_run(file: UploadFile = File(...), ue_id: str = Form(...)):
         profile_result = prepare_profile_results(prof)
 
         # Process the model outputs
-        predictions = process_model_output_logits(model, model_outputs.logits)
+        predictions = get_image_classification_results_from_model_output_logits(model, model_outputs.logits)
 
         return JSONResponse(
             content={

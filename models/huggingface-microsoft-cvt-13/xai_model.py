@@ -31,7 +31,7 @@ from typing import List, Optional
 from ai_server_utils import (
     encode_image,
     prepare_profile_results,
-    process_model_output_logits,
+    get_image_classification_results_from_model_output_logits,
     profile_activities,
 )
 
@@ -211,7 +211,7 @@ async def run_model(
             gradcam_method=gradcam_method,
         )
 
-        predictions = process_model_output_logits(model, model_output_logits)
+        predictions = get_image_classification_results_from_model_output_logits(model, model_output_logits)
 
         return JSONResponse(
             {
@@ -295,7 +295,7 @@ async def profile_run(
                     "image": encode_image(xai_image),
                     "xai_method": gradcam_method_name,
                 },
-                "model_results": process_model_output_logits(
+                "model_results": get_image_classification_results_from_model_output_logits(
                     model, model_output_logits
                 ),
                 "profile_result": prepare_profile_results(prof),

@@ -290,7 +290,7 @@ def download_model_readme(model_name: str) -> str:
     readme_content = get_hf_model_readme(model_name)
     if readme_content:
         readme_file_path = os.path.join(get_hf_model_directory(model_name), "README.md")
-        with open(readme_file_path, "w") as file:
+        with open(readme_file_path, "w", encoding="utf-8") as file:
             file.write(readme_content)
         return readme_file_path
     else:
