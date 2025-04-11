@@ -86,6 +86,17 @@ def generate_model_script(
 ) -> None:
     """Generate the model.py file."""
 
+    # --------------------------------
+    # ask for additional help information from the user to be more flexible
+    # --------------------------------
+    additional_guidance = input(
+        "Do you have any helpful guidance or instructions for the LLM agent to generate the model.py file?: "
+    )
+    if additional_guidance:
+        additional_guidance = additional_guidance.strip()
+    else:
+        additional_guidance = ""
+    
     client = OpenAI()
     completion = client.chat.completions.create(
         model="gpt-4o",
@@ -100,6 +111,8 @@ Below is the README file of the hugging face model:
 -----------------
 Below is an example model script content for your reference:
 {example_content[MODEL_SCRIPT_NAME]}
+
+{"-----------------\nBelow are additional guidance for you:\n" + additional_guidance if additional_guidance else ""}
 
 -----------------
 Requirements:
@@ -127,8 +140,21 @@ def generate_dockerfile(
     example_content: dict,
     output_files_content: dict,
     model_output_directory: str,
+    additional_guidance: str = "",
 ) -> None:
     """Generate the Dockerfile."""
+
+    # --------------------------------
+    # ask for additional help information from the user to be more flexible
+    # --------------------------------
+    additional_guidance = input(
+        "Do you have any helpful guidance or instructions for the LLM agent to generate the Dockerfile?: "
+    )
+    if additional_guidance:
+        additional_guidance = additional_guidance.strip()
+    else:
+        additional_guidance = ""
+
     client = OpenAI()
     completion = client.chat.completions.create(
         model="gpt-4o",
@@ -148,6 +174,8 @@ Below is the content of `ai_server.py`
 -------------------
 Below is an Dockerfile example for your reference:
 {example_content[DOCKERFILE_NAME]}
+
+{"-----------------\nBelow are additional guidance for you:\n" + additional_guidance if additional_guidance else ""}
 
 --------------------
 Requirements:
@@ -174,8 +202,21 @@ def generate_ai_client_utils_script(
     example_content: dict,
     output_files_content: dict,
     model_output_directory: str,
+    additional_guidance: str = "",
 ) -> None:
     """Generate the AI client utils file."""
+
+    # --------------------------------
+    # ask for additional help information from the user to be more flexible
+    # --------------------------------
+    additional_guidance = input(
+        "Do you have any helpful guidance or instructions for the LLM agent to generate the ai_client_utils.py file?: "
+    )
+    if additional_guidance:
+        additional_guidance = additional_guidance.strip()
+    else:
+        additional_guidance = ""
+
     client = OpenAI()
     completion = client.chat.completions.create(
         model="gpt-4o",
@@ -195,6 +236,8 @@ Below is the content of the `model.py` that serves the AI model:
 -------------------
 Below is an example util script (for a image processing AI service) for your reference:
 {example_content[AI_CLIENT_UTILS_SCRIPT_NAME]}
+
+{"-----------------\nBelow are additional guidance for you:\n" + additional_guidance if additional_guidance else ""}
 
 --------------------
 Requirements:
