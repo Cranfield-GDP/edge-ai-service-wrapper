@@ -15,6 +15,7 @@ RUN pip install --no-cache-dir --upgrade pip
 RUN pip install --no-cache-dir \
     fastapi \
     uvicorn[standard] \
+    huggingface_hub[hf_xet] \
     torch \
     torchvision \
     opencv-python \

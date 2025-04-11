@@ -197,7 +197,7 @@ model_repository = os.path.join(os.path.dirname(__file__), "..", "models")
 # Resource profiling
 # ----------------------------------------
 
-profile_machines = ["LAP004262", "xxx"]
+profile_machines = ["LAP004262", "ugurcan.celik"]
 
 # resource_profiles = [
 #     {
@@ -205,7 +205,7 @@ profile_machines = ["LAP004262", "xxx"]
 #         "profiles": {
 #             "LAP004262": {
 #                 "init_time": 5,
-#                 "cpu_memory": 1000,   
+#                 "cpu_memory": 1000,
 #                 "inference": {
 #                     "cpu_time": 0.5,
 #                     "device_time": 0,
@@ -259,7 +259,11 @@ for model_name in MODEL_NAMES:
             continue
         machine_profile = {
             "init_time": machine_specific_profile["initialization_time_ms"],
-            "cpu_memory_gb": float(machine_specific_profile["idle_container_cpu_memory_usage"].replace("GB", "")),
+            "cpu_memory_gb": float(
+                machine_specific_profile["idle_container_cpu_memory_usage"].replace(
+                    "GB", ""
+                )
+            ),
             "inference": {
                 "cpu_time": machine_specific_profile["inference"]["cpu_time_ms"],
                 "device_time": machine_specific_profile["inference"]["device_time_ms"],
@@ -289,77 +293,103 @@ print(json.dumps(resource_profiles, indent=4))
 model_indices = list(range(len(resource_profiles)))
 tick_labels = [i + 1 for i in model_indices]  # Create tick labels starting from 1
 
-# Create a plot containing four subplots
-fig, axs = plt.subplots(1, 5, figsize=(20, 4))
+# Create a plot containing ten subplots
+# the first row contains everything for the first machine, and the second row contains everything for the second machine
+fig, axs = plt.subplots(2, 5, figsize=(20, 7))
 
-# Initialization time
-for i, profile in enumerate(resource_profiles):
-    init_time = (
-        profile["profiles"][profile_machines[0]]["init_time"] / 1000
-    )  # Convert to seconds
-    axs[0].bar(i, init_time, label=f"Model {i}")
 
-# add a subplot title below the x-axis
-axs[0].set_xlabel("(a) Initialization Time (s)")
-axs[0].set_xticks(model_indices)
-axs[0].set_xticklabels(tick_labels, rotation=0)  # Use indices as labels
-# axs[0].legend(loc="upper right")
+for machine_index in range(2):
 
-# Inference CPU time
-for i, profile in enumerate(resource_profiles):
-    cpu_time = profile["profiles"][profile_machines[0]]["inference"]["cpu_time"]
-    axs[1].bar(i, cpu_time, label=f"Model {i}")
+    # Initialization time
+    for i, profile in enumerate(resource_profiles):
+        init_time = (
+            profile["profiles"][profile_machines[machine_index]]["init_time"] / 1000
+        )  # Convert to seconds
+        axs[machine_index, 0].bar(i, init_time, label=f"Model {i}")
 
-axs[1].set_xlabel("(b) Inference CPU Time (ms)")
-axs[1].set_xticks(model_indices)
-axs[1].set_xticklabels(tick_labels, rotation=0)  # Use indices as labels
-# axs[1].legend(loc="upper right")
+    # add a subplot title below the x-axis
+    axs[machine_index, 0].set_xlabel("(a) Initialization Time (s)" if machine_index == 0 else "(f) Initialization Time (s)")
+    axs[machine_index, 0].set_xticks(model_indices)
+    axs[machine_index, 0].set_xticklabels(
+        tick_labels, rotation=0
+    )  # Use indices as labels
+    # axs[machine_index,  0].legend(loc="upper right")
 
-# Inference execution time
-for i, profile in enumerate(resource_profiles):
-    execution_time = (
-        profile["profiles"][profile_machines[0]]["inference"]["avg_execution_time"]
-        / 1000
-    )  # Convert to seconds
-    axs[2].bar(i, execution_time, label=f"Model {i}")
+    # Inference CPU time
+    for i, profile in enumerate(resource_profiles):
+        cpu_time = profile["profiles"][profile_machines[machine_index]]["inference"][
+            "cpu_time"
+        ]
+        axs[machine_index, 1].bar(i, cpu_time, label=f"Model {i}")
 
-axs[2].set_xlabel("(c) Request Response Time (s)")
-axs[2].set_xticks(model_indices)
-axs[2].set_xticklabels(tick_labels, rotation=0)  # Use indices as labels
-# axs[2].legend(loc="upper right")
+    axs[machine_index, 1].set_xlabel("(b) Inference CPU Time (ms)" if machine_index == 0 else "(g) Inference CPU Time (ms)")
+    axs[machine_index, 1].set_xticks(model_indices)
+    axs[machine_index, 1].set_xticklabels(
+        tick_labels, rotation=0
+    )  # Use indices as labels
+    # axs[machine_index,  1].legend(loc="upper right")
 
-# Idel CPU Memory
-for i, profile in enumerate(resource_profiles):
-    cpu_memory = (
-        profile["profiles"][profile_machines[0]]["cpu_memory_gb"]
-    )  # Convert to GB
-    axs[4].bar(i, cpu_memory, label=f"Model {i}")
-axs[4].set_xlabel("(e) Idle CPU Memory (GB)")
-axs[4].set_xticks(model_indices)
-axs[4].set_xticklabels(tick_labels, rotation=0)  # Use indices as labels
+    # Inference execution time
+    for i, profile in enumerate(resource_profiles):
+        execution_time = (
+            profile["profiles"][profile_machines[machine_index]]["inference"][
+                "avg_execution_time"
+            ]
+            / 1000
+        )  # Convert to seconds
+        axs[machine_index, 2].bar(i, execution_time, label=f"Model {i}")
 
-# XAI average execution time
-for i, profile in enumerate(resource_profiles):
-    xai_methods = profile["profiles"][profile_machines[0]]["xai"]
-    xai_times = [
-        xai_methods[xai_name]["avg_execution_time"] / 1000 for xai_name in xai_methods
-    ]
-    # Calculate min, max, mean, and median for candlestick
-    xai_min = np.min(xai_times)
-    xai_max = np.max(xai_times)
-    xai_mean = np.mean(xai_times)
-    xai_median = np.median(xai_times)
+    axs[machine_index, 2].set_xlabel("(c) Request Response Time (s)" if machine_index == 0 else "(h) Request Response Time (s)")
+    axs[machine_index, 2].set_xticks(model_indices)
+    axs[machine_index, 2].set_xticklabels(
+        tick_labels, rotation=0
+    )  # Use indices as labels
+    # axs[machine_index,  2].legend(loc="upper right")
 
-    # Draw candlestick: vertical line for min to max, box for mean to median
-    axs[3].plot([i, i], [xai_min, xai_max], color="black", linewidth=1)  # Vertical line
-    axs[3].bar(
-        i, xai_median - xai_mean, bottom=xai_mean, width=0.2, color="blue", alpha=0.6
-    )  # Box for mean to median
+    # Idel CPU Memory
+    for i, profile in enumerate(resource_profiles):
+        cpu_memory = profile["profiles"][profile_machines[machine_index]][
+            "cpu_memory_gb"
+        ]  # Convert to GB
+        axs[machine_index, 4].bar(i, cpu_memory, label=f"Model {i}")
+    axs[machine_index, 4].set_xlabel("(e) Idle CPU Memory (GB)" if machine_index == 0 else "(j) Idle CPU Memory (GB)")
+    axs[machine_index, 4].set_xticks(model_indices)
+    axs[machine_index, 4].set_xticklabels(
+        tick_labels, rotation=0
+    )  # Use indices as labels
 
-axs[3].set_xlabel("(d) XAI Response Time (s)")
-axs[3].set_xticks(model_indices)
-axs[3].set_xticklabels(tick_labels, rotation=0)  # Use indices as labels
-# axs[3].legend(loc="upper right")
+    # XAI average execution time
+    for i, profile in enumerate(resource_profiles):
+        xai_methods = profile["profiles"][profile_machines[machine_index]]["xai"]
+        xai_times = [
+            xai_methods[xai_name]["avg_execution_time"] / 1000
+            for xai_name in xai_methods
+        ]
+        # Calculate min, max, mean, and median for candlestick
+        xai_min = np.min(xai_times)
+        xai_max = np.max(xai_times)
+        xai_mean = np.mean(xai_times)
+        xai_median = np.median(xai_times)
+
+        # Draw candlestick: vertical line for min to max, box for mean to median
+        axs[machine_index, 3].plot(
+            [i, i], [xai_min, xai_max], color="black", linewidth=1
+        )  # Vertical line
+        axs[machine_index, 3].bar(
+            i,
+            xai_median - xai_mean,
+            bottom=xai_mean,
+            width=0.8,
+            color="blue",
+            alpha=0.6,
+        )  # Box for mean to median
+
+    axs[machine_index, 3].set_xlabel("(d) XAI Response Time (s)" if machine_index == 0 else "(i) XAI Response Time (s)")
+    axs[machine_index, 3].set_xticks(model_indices)
+    axs[machine_index, 3].set_xticklabels(
+        tick_labels, rotation=0
+    )  # Use indices as labels
+    # axs[3].legend(loc="upper right")
 
 # Adjust layout
 # plt.tight_layout()

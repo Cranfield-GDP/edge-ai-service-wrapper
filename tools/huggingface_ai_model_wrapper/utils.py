@@ -391,18 +391,28 @@ def copy_test_image(model_name: str) -> str:
         model_name
     ), f"Model directory not found for {model_name}."
 
-    test_image_file = "puppy.png"
+    # get all image files in the common_assets directory
+    common_assets_dir = os.path.join(os.path.dirname(__file__), "common_assets")
+    test_image_files = [
+        file for file in os.listdir(common_assets_dir) if file.endswith(".png")
+    ]
+    assert len(test_image_files) > 0, f"No test image found in {common_assets_dir}."
+
+    # ask the user to select a test image
+    print("Please select a test image from the following list:")
+    for i, file in enumerate(test_image_files):
+        print(f"{i + 1}. {file}")
+    selected_index = int(input("Enter the number of the selected image: ")) - 1
+    assert (
+        0 <= selected_index < len(test_image_files)
+    ), f"Invalid selection: {selected_index + 1}. Please select a valid image number."
+    test_image_file = test_image_files[selected_index]
     test_image_output_path = os.path.join(
         get_hf_model_directory(model_name), test_image_file
     )
-
     test_image_source_path = os.path.join(
         os.path.dirname(__file__), "common_assets", test_image_file
     )
-    assert os.path.exists(
-        test_image_source_path
-    ), f"Test image not found: {test_image_source_path}"
-
     with open(test_image_source_path, "rb") as source_file:
         with open(test_image_output_path, "wb") as dest_file:
             dest_file.write(source_file.read())
