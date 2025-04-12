@@ -13,7 +13,6 @@ from fastapi import APIRouter, File, Form, UploadFile
 from fastapi.responses import JSONResponse
 from ultralytics import YOLO
 from PIL import Image
-import io
 
 # --------------------------------
 # Device configuration
