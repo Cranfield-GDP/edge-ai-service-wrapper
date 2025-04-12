@@ -35,15 +35,6 @@ def process_yolov8_detection_model_results(results):
     """
     Process the YOLOv8 detection model results.
     """
-    # # Access the results
-    # for result in results:
-    #     xywh = result.boxes.xywh  # center-x, center-y, width, height
-    #     xywhn = result.boxes.xywhn  # normalized
-    #     xyxy = result.boxes.xyxy  # top-left-x, top-left-y, bottom-right-x, bottom-right-y
-    #     xyxyn = result.boxes.xyxyn  # normalized
-    #     names = [result.names[cls.item()] for cls in result.boxes.cls.int()]  # class name of each box
-    #     confs = result.boxes.conf  # confidence score of each box
-    
     rendered_image = results[0].plot(conf=True, pil=True, show=False, save=False)
 
     return results[0].summary(), rendered_image
