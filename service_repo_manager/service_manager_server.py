@@ -26,11 +26,13 @@ client = MongoClient(MONGO_URI)
 db = client.get_database("cranfield_ai_services")
 collection = db["ai_services"]
 
+
 # Helper function to serialize MongoDB documents
 def serialize_ai_service(doc):
     doc = {**doc, "id": str(doc["_id"])}
     doc.pop("_id", None)  # Remove the MongoDB ObjectId field
     return doc
+
 
 # Create AI Service Record
 @app.post("/ai-services/", response_model=dict, status_code=201, tags=["AI Service"])
@@ -42,23 +44,36 @@ async def create_ai_service(ai_service: AIService):
     created = collection.find_one({"_id": result.inserted_id})
     return serialize_ai_service(created)
 
+
 # Read all AI Service with optional filtering
 @app.get("/ai-services/", response_model=list, status_code=200, tags=["AI Service"])
-async def get_all_ai_services(model_name: Optional[str] = None, task: Optional[str] = None):
+async def get_all_ai_services(
+    model_name: Optional[str] = None,
+    image_repository_url: Optional[str] = None,
+    task: Optional[str] = None,
+):
     """
     Retrieve all AI Service with optional filtering.
     """
     query = {}
     if model_name:
         query["model_name"] = model_name
+    if image_repository_url:
+        query["image_repository_url"] = image_repository_url
     if task:
         query["task"] = task
 
     services = collection.find(query)
     return [serialize_ai_service(s) for s in services]
 
+
 # Read a single AI Service by ID
-@app.get("/ai-service/{service_id}", response_model=dict, status_code=200, tags=["AI Service"])
+@app.get(
+    "/ai-service/{service_id}",
+    response_model=dict,
+    status_code=200,
+    tags=["AI Service"],
+)
 async def get_ai_service(service_id: str):
     """
     Retrieve a single AI Service by its ID.
@@ -70,8 +85,14 @@ async def get_ai_service(service_id: str):
         raise HTTPException(status_code=404, detail="AI Service not found")
     return serialize_ai_service(service)
 
+
 # Update AI Service by ID
-@app.put("/ai-service/{service_id}", response_model=dict, status_code=200, tags=["AI Service"])
+@app.put(
+    "/ai-service/{service_id}",
+    response_model=dict,
+    status_code=200,
+    tags=["AI Service"],
+)
 async def update_ai_service(service_id: str, ai_service: AIService):
     """
     Update an existing AI Service by its ID.
@@ -87,8 +108,14 @@ async def update_ai_service(service_id: str, ai_service: AIService):
     updated = collection.find_one({"_id": ObjectId(service_id)})
     return serialize_ai_service(updated)
 
+
 # Delete AI Service by ID
-@app.delete("/ai-service/{service_id}", response_model=dict, status_code=200, tags=["AI Service"])
+@app.delete(
+    "/ai-service/{service_id}",
+    response_model=dict,
+    status_code=200,
+    tags=["AI Service"],
+)
 async def delete_ai_service(service_id: str):
     """
     Delete an AI Service by its ID.

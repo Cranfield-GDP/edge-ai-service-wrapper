@@ -573,7 +573,8 @@ def update_ai_service_db(model_name: str, additional_data: dict) -> None:
 
     # check if the AI service already exists in the database
     url = "http://localhost:8000/ai-services/"
-    response = requests.get(url, params={"model_name": model_name})
+    # here has to use the image repository url instead of the model name due to the YOLO model series.
+    response = requests.get(url, params={"image_repository_url": service_data_json["image_repository_url"]})
     assert (
         response.status_code == 200
     ), f"Error fetching AI services: {response.status_code}, {response.text}"
