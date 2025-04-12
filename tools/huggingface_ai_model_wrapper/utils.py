@@ -495,6 +495,8 @@ def copy_test_image(model_name: str, additional_data: dict) -> str:
     with open(test_image_source_path, "rb") as source_file:
         with open(test_image_output_path, "wb") as dest_file:
             dest_file.write(source_file.read())
+    
+    return test_image_output_path
 
 
 def get_image_repository_name(model_name: str, additional_data: dict) -> str:
