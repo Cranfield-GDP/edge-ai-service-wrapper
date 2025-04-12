@@ -144,14 +144,20 @@ class ProfileResultProcessor:
             self.cpu_memory_usage_bytes, profile_result["cpu_memory_usage"]
         )
         # self cpu memory usage could be negative. here we take the value that has the max absolute value
-        if abs(profile_result["self_cpu_memory_usage"]) > abs( self.self_cpu_memory_usage_bytes):
+        if abs(profile_result["self_cpu_memory_usage"]) > abs(
+            self.self_cpu_memory_usage_bytes
+        ):
             self.self_cpu_memory_usage_bytes = profile_result["self_cpu_memory_usage"]
         self.device_memory_usage_bytes = max(
             self.device_memory_usage_bytes, profile_result["device_memory_usage"]
         )
         # same as self cpu memory usage
-        if abs(profile_result["self_device_memory_usage"]) > abs(self.self_device_memory_usage_bytes):
-            self.self_device_memory_usage_bytes = profile_result["self_device_memory_usage"]
+        if abs(profile_result["self_device_memory_usage"]) > abs(
+            self.self_device_memory_usage_bytes
+        ):
+            self.self_device_memory_usage_bytes = profile_result[
+                "self_device_memory_usage"
+            ]
         self.cpu_time_total_us = max(
             self.cpu_time_total_us, profile_result["cpu_time_total"]
         )
@@ -219,8 +225,7 @@ class ProfileResultProcessor:
                 "inference": {
                     "cpu_time_ms": self.cpu_time_total_us / 1000,
                     "device_time_ms": self.device_time_total_us / 1000,
-                    "cpu_memory_usage_MB": self.cpu_memory_usage_bytes
-                    / (1024 * 1024),
+                    "cpu_memory_usage_MB": self.cpu_memory_usage_bytes / (1024 * 1024),
                     "self_cpu_memory_usage_MB": self.self_cpu_memory_usage_bytes
                     / (1024 * 1024),
                     "device_memory_usage_MB": self.device_memory_usage_bytes
@@ -300,11 +305,15 @@ class ProfileResultProcessor:
                         profile["xai"] = []
                     for xai_profile in profile["xai"]:
                         if xai_profile["xai_method"] == self.gradcam_method_name:
-                            xai_profile.update(complete_xai_profile_data_to_save["xai"][0]) 
+                            xai_profile.update(
+                                complete_xai_profile_data_to_save["xai"][0]
+                            )
                             xai_method_found = True
                             break
                     if not xai_method_found:
-                        profile["xai"].append(complete_xai_profile_data_to_save["xai"][0])
+                        profile["xai"].append(
+                            complete_xai_profile_data_to_save["xai"][0]
+                        )
                     break
 
             if not profile_found:
@@ -328,6 +337,18 @@ def option_run():
     print("K8S_POD_NAME: ", pod_name)
     print("Response")
     print(json.dumps(response, indent=4))
+
+    # display the visualization image
+    if response and "visualization" in response:
+        visualization = response["visualization"]
+        if visualization:
+            image_bytes = base64.b64decode(visualization)
+            image = Image.open(BytesIO(image_bytes))
+            plt.imshow(image)
+            plt.axis("off")
+            plt.show()
+        else:
+            print("No visualization image found in the response.")
 
 
 def option_profile_run():

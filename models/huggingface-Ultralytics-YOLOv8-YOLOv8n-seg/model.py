@@ -1,8 +1,10 @@
 # import server utils
 from ai_server_utils import (
+    encode_image,
     profile_activities,
     prepare_profile_results,
 )
+
 # import profile utils
 from torch.profiler import profile, record_function
 
@@ -23,36 +25,42 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # Model-specific configuration
 # make sure the variables `MODEL_NAME` and `model` are defined here.
 # --------------------------------
-MODEL_NAME = "YOLOv8n-seg"
-model = YOLO(MODEL_NAME).to(device)
+MODEL_NAME = "Ultralytics/YOLOv8"
+model = YOLO("yolov8n-seg.pt")
 model.eval()
 
 # Initialize the FastAPI router
 router = APIRouter()
 
+
+def process_yolov8_segmentation_model_results(results):
+    """
+    Process the YOLOv8 segmentation model results.
+    """
+    rendered_image = results[0].plot(conf=True, pil=True, show=False, save=False)
+
+    return results[0].summary(), rendered_image
+
+
 @router.post("/run")
 async def run_model(file: UploadFile = File(...), ue_id: str = Form(...)):
     try:
         # Prepare the model input
-        image = Image.open(file.file).convert("RGB")
-        image_bytes = io.BytesIO()
-        image.save(image_bytes, format='JPEG')
-        image_bytes = image_bytes.getvalue()
+        image = Image.open(file.file)
 
         # Perform inference
         with torch.no_grad():
-            results = model(image_bytes)
+            results = model(image, device=device)
 
-        # Process the model outputs
-        output_image = results[0].plot()
-        output_image_bytes = io.BytesIO()
-        output_image.save(output_image_bytes, format='JPEG')
-        output_image_bytes = output_image_bytes.getvalue()
+        model_results, visualization = process_yolov8_segmentation_model_results(
+            results
+        )
 
         return JSONResponse(
             content={
                 "ue_id": ue_id,
-                "model_results": output_image_bytes,
+                "model_results": model_results,
+                "visualization": encode_image(visualization),
             }
         )
     except Exception as e:
@@ -62,6 +70,7 @@ async def run_model(file: UploadFile = File(...), ue_id: str = Form(...)):
             status_code=500,
         )
 
+
 @router.post("/profile_run")
 async def profile_run(file: UploadFile = File(...), ue_id: str = Form(...)):
     """
@@ -69,10 +78,7 @@ async def profile_run(file: UploadFile = File(...), ue_id: str = Form(...)):
     """
     try:
         # Prepare the model input
-        image = Image.open(file.file).convert("RGB")
-        image_bytes = io.BytesIO()
-        image.save(image_bytes, format='JPEG')
-        image_bytes = image_bytes.getvalue()
+        image = Image.open(file.file)
 
         # perform profiling
         with profile(
@@ -81,21 +87,20 @@ async def profile_run(file: UploadFile = File(...), ue_id: str = Form(...)):
         ) as prof:
             with record_function("model_run"):
                 with torch.no_grad():
-                    results = model(image_bytes)
+                    results = model(image, device=device)
+
+        model_results, visualization = process_yolov8_segmentation_model_results(
+            results
+        )
 
         profile_result = prepare_profile_results(prof)
-
-        # Process the model outputs
-        output_image = results[0].plot()
-        output_image_bytes = io.BytesIO()
-        output_image.save(output_image_bytes, format='JPEG')
-        output_image_bytes = output_image_bytes.getvalue()
 
         return JSONResponse(
             content={
                 "ue_id": ue_id,
                 "profile_result": profile_result,
-                "model_results": output_image_bytes,
+                "model_results": model_results,
+                "visualization": encode_image(visualization),
             }
         )
 
@@ -105,6 +110,7 @@ async def profile_run(file: UploadFile = File(...), ue_id: str = Form(...)):
             content={"error": f"Failed to process the request. {e}"},
             status_code=500,
         )
+
 
 # Below are the model input and output specifications to be used by the `/help` endpoint
 MODEL_INPUT_FORM_SPEC = {
@@ -118,5 +124,9 @@ MODEL_INPUT_FORM_SPEC = {
 
 MODEL_OUTPUT_JSON_SPEC = {
     "ue_id": "unique execution ID",
-    "model_results": "binary content of the segmented image",
+    "model_results": "The results of the segmentation model.",
+    "visualization": {
+        "type": "image",
+        "description": "The segmented image with bounding boxes.",
+    },
 }

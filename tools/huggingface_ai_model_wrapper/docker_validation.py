@@ -180,7 +180,7 @@ def stop_docker_container(huggingface_model_name: str, additional_data: dict) ->
     # --------------------------------
     # stop the docker container if it is running
     # --------------------------------
-    container_name = get_docker_container_run_name(huggingface_model_name)
+    container_name = get_docker_container_run_name(huggingface_model_name, additional_data)
     try:
         subprocess.run(
             ["docker", "stop", container_name],
