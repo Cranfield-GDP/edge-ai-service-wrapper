@@ -45,7 +45,7 @@ class Profile(BaseModel):
     idle_container_cpu_memory_usage: str
     idle_container_device_memory_usage: str
     inference: InferenceProfile
-    xai: List[XAIProfile]
+    xai: Optional[List[XAIProfile]] = []
 
 
 class Feedback(BaseModel):

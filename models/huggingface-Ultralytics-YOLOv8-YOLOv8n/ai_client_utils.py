@@ -9,6 +9,6 @@ def prepare_ai_service_request_files():
 def prepare_ai_service_request_data():
     """Prepare the `data` part including `ue_id` for the AI service request."""
     data = {}
-    ue_id = input("Please input the unique execution ID (ue_id): ")
+    ue_id = input("Please input the User Equipment ID (ue_id): ")
     data["ue_id"] = ue_id
     return data

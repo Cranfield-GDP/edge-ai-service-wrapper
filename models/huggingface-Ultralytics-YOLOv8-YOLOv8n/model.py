@@ -1,5 +1,6 @@
 # import server utils
 from ai_server_utils import (
+    encode_image,
     profile_activities,
     prepare_profile_results,
 )
@@ -24,35 +25,44 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # make sure the variables `MODEL_NAME` and `model` are defined here.
 # --------------------------------
 MODEL_NAME = "Ultralytics/YOLOv8n"
-model = YOLO(MODEL_NAME).to(device)
+model = YOLO("YOLOv8n.pt")
 model.eval()
 
 # Initialize the FastAPI router
 router = APIRouter()
 
+def process_yolov8_detection_model_results(results):
+    """
+    Process the YOLOv8 detection model results.
+    """
+    # # Access the results
+    # for result in results:
+    #     xywh = result.boxes.xywh  # center-x, center-y, width, height
+    #     xywhn = result.boxes.xywhn  # normalized
+    #     xyxy = result.boxes.xyxy  # top-left-x, top-left-y, bottom-right-x, bottom-right-y
+    #     xyxyn = result.boxes.xyxyn  # normalized
+    #     names = [result.names[cls.item()] for cls in result.boxes.cls.int()]  # class name of each box
+    #     confs = result.boxes.conf  # confidence score of each box
+    
+    rendered_image = results[0].plot(conf=True, pil=True, show=False, save=False)
+
+    return results[0].summary(), rendered_image
+
 @router.post("/run")
 async def run_model(file: UploadFile = File(...), ue_id: str = Form(...)):
     try:
         # Prepare the model input
-        image = Image.open(file.file).convert("RGB")
-        image_bytes = io.BytesIO()
-        image.save(image_bytes, format='JPEG')
-        image_bytes = image_bytes.getvalue()
+        input_image = Image.open(file.file)
 
         # Perform inference
         with torch.no_grad():
-            results = model(image_bytes)
-
-        # Process the model outputs
-        output_image = results[0].plot()
-        output_image_bytes = io.BytesIO()
-        output_image.save(output_image_bytes, format='JPEG')
-        output_image_bytes = output_image_bytes.getvalue()
-
+            results = model.predict(input_image, device=device)       
+        model_results, visualization = process_yolov8_detection_model_results(results)
         return JSONResponse(
             content={
                 "ue_id": ue_id,
-                "model_results": output_image_bytes,
+                "model_results": model_results,
+                "visualization": encode_image(visualization),
             }
         )
     except Exception as e:
@@ -70,9 +80,6 @@ async def profile_run(file: UploadFile = File(...), ue_id: str = Form(...)):
     try:
         # Prepare the model input
         image = Image.open(file.file).convert("RGB")
-        image_bytes = io.BytesIO()
-        image.save(image_bytes, format='JPEG')
-        image_bytes = image_bytes.getvalue()
 
         # perform profiling
         with profile(
@@ -81,21 +88,17 @@ async def profile_run(file: UploadFile = File(...), ue_id: str = Form(...)):
         ) as prof:
             with record_function("model_run"):
                 with torch.no_grad():
-                    results = model(image_bytes)
+                    results = model.predict(image, device=device)
 
         profile_result = prepare_profile_results(prof)
-
-        # Process the model outputs
-        output_image = results[0].plot()
-        output_image_bytes = io.BytesIO()
-        output_image.save(output_image_bytes, format='JPEG')
-        output_image_bytes = output_image_bytes.getvalue()
+        model_results, visualization = process_yolov8_detection_model_results(results)
 
         return JSONResponse(
             content={
                 "ue_id": ue_id,
                 "profile_result": profile_result,
-                "model_results": output_image_bytes,
+                "model_results": model_results,
+                "visualization": encode_image(visualization),
             }
         )
 
