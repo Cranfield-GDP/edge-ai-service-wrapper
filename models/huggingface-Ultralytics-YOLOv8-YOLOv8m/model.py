@@ -23,8 +23,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # Model-specific configuration
 # make sure the variables `MODEL_NAME` and `model` are defined here.
 # --------------------------------
-MODEL_NAME = "Ultralytics/YOLOv8n"
-model = YOLO("YOLOv8n.pt")
+MODEL_NAME = "Ultralytics/YOLOv8m"
+model = YOLO("yolov8m.pt")
 model.eval()
 
 # Initialize the FastAPI router

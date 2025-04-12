@@ -113,5 +113,6 @@ MODEL_INPUT_FORM_SPEC = {
 
 MODEL_OUTPUT_JSON_SPEC = {
     "ue_id": "unique execution ID",
-    "model_results": "binary content of the processed image",
+    "model_results": "model results",
+    "visualization": "base64 encoded image",
 }
