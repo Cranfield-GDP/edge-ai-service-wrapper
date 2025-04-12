@@ -1,12 +1,11 @@
 import os
 import shutil
 from dotenv import load_dotenv
-from tools.huggingface_ai_model_wrapper.model_specific_utils.yolov8_utils import YOLOv8_MODEL_ID_KEY, YOLOv8_MODEL_ID_LIST
+from model_specific_utils.yolov8_utils import YOLOv8_MODEL_ID_KEY, YOLOv8_MODEL_ID_LIST
 from utils import (
     AI_CLIENT_SCRIPT_NAME,
     AI_SERVER_SCRIPT_NAME,
     AI_SERVER_UTILS_SCRIPT_NAME,
-    COMPLETE_SERVICE_FILE_LIST,
     NECESSARY_SERVICE_FILE_LIST,
     HEALTHCHECK_SCRIPT_NAME,
     XAI_MODEL_SCRIPT_NAME,
@@ -33,7 +32,7 @@ def prepare_example_model_data():
 
     # handle special cases
     additional_data = {}
-    if huggingface_model_name == "Ultralytics/YOLOv8":
+    if example_model_name == "Ultralytics/YOLOv8":
         while True:
             # ask for specific model_id inside the YOLOv8 repo
             if YOLOv8_MODEL_ID_KEY not in additional_data:
