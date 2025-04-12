@@ -1,11 +1,13 @@
 import os
 import shutil
 from dotenv import load_dotenv
+from tools.huggingface_ai_model_wrapper.model_specific_utils.yolov8_utils import YOLOv8_MODEL_ID_KEY, YOLOv8_MODEL_ID_LIST
 from utils import (
     AI_CLIENT_SCRIPT_NAME,
     AI_SERVER_SCRIPT_NAME,
     AI_SERVER_UTILS_SCRIPT_NAME,
     COMPLETE_SERVICE_FILE_LIST,
+    NECESSARY_SERVICE_FILE_LIST,
     HEALTHCHECK_SCRIPT_NAME,
     XAI_MODEL_SCRIPT_NAME,
     copy_file_from_example_model_folder,
@@ -21,6 +23,63 @@ from utils import (
 
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", "..", ".env"))
 
+def prepare_example_model_data():
+    example_model_name = input(
+        "Enter the example model name (default to microsoft/resnet-50): "
+    ).strip()
+
+    if not example_model_name:
+        example_model_name = "microsoft/resnet-50"
+
+    # handle special cases
+    additional_data = {}
+    if huggingface_model_name == "Ultralytics/YOLOv8":
+        while True:
+            # ask for specific model_id inside the YOLOv8 repo
+            if YOLOv8_MODEL_ID_KEY not in additional_data:
+                print(f"Available YOLOv8 model IDs: {YOLOv8_MODEL_ID_LIST}")
+                yolov8_model_id = input(
+                    f"Enter the YOLOv8 model ID (default: {YOLOv8_MODEL_ID_LIST[0]}): "
+                ).strip()
+                if not yolov8_model_id:
+                    yolov8_model_id = YOLOv8_MODEL_ID_LIST[0]
+            else:
+                print(f"Available YOLOv8 model IDs: {YOLOv8_MODEL_ID_LIST}")
+                yolov8_model_id = input(
+                    f"Enter the YOLOv8 model ID (default: {additional_data[YOLOv8_MODEL_ID_KEY]}): "
+                ).strip()
+                if not yolov8_model_id:
+                    yolov8_model_id = additional_data[YOLOv8_MODEL_ID_KEY]
+
+            if not yolov8_model_id or yolov8_model_id not in YOLOv8_MODEL_ID_LIST:
+                print(
+                    f"The model ID '{yolov8_model_id}' is invalid. Please choose from the available options."
+                )
+                continue
+
+            additional_data[YOLOv8_MODEL_ID_KEY] = yolov8_model_id
+            break
+
+    example_model_directory = get_hf_model_directory(
+        example_model_name, additional_data
+    )
+
+    assert os.path.exists(
+        example_model_directory
+    ), f"The example model directory '{example_model_directory}' does not exist."
+
+    example_model_files_content = {}
+    for file_name in NECESSARY_SERVICE_FILE_LIST:
+        file_path = os.path.join(example_model_directory, file_name)
+        assert os.path.exists(
+            file_path
+        ), f"The example file '{file_path}' does not exist."
+        with open(file_path, "r") as file:
+            example_model_files_content[file_name] = file.read()
+    print(f"The example {example_model_name} is valid.")
+    
+    return example_model_files_content
+
 
 def code_generation_main(huggingface_model_name: str, additional_data: dict) -> None:
 
@@ -32,21 +91,7 @@ def code_generation_main(huggingface_model_name: str, additional_data: dict) -> 
     if not huggingface_model_readme:
         raise (f"The model '{huggingface_model_name}' does not have a README file.")
 
-    example_model_name = "example/image-model"
-    example_model_directory = get_hf_model_directory(example_model_name, None)
-    assert os.path.exists(
-        example_model_directory
-    ), f"The example model directory '{example_model_directory}' does not exist."
-
-    example_model_files_content = {}
-    for file_name in COMPLETE_SERVICE_FILE_LIST:
-        file_path = os.path.join(example_model_directory, file_name)
-        assert os.path.exists(
-            file_path
-        ), f"The example file '{file_path}' does not exist."
-        with open(file_path, "r") as file:
-            example_model_files_content[file_name] = file.read()
-    print(f"The example {example_model_name} is valid.")
+    example_model_files_content = prepare_example_model_data()
 
     # --------------------------------
     # prepare the model output directory
