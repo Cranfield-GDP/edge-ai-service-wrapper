@@ -52,11 +52,11 @@ def build_ai_service_base_image() -> None:
     print(f"Base image {base_image_name}:{base_image_tag} built successfully.")
 
 
-def build_and_start_docker_container(huggingface_model_name: str) -> None:
+def build_and_start_docker_container(huggingface_model_name: str, additional_data: dict) -> None:
     # --------------------------------
     # get the model directory
     # --------------------------------
-    hf_model_directory = get_hf_model_directory(huggingface_model_name)
+    hf_model_directory = get_hf_model_directory(huggingface_model_name, additional_data)
     # reset the model directory if it exists
     assert os.path.exists(
         hf_model_directory
@@ -87,7 +87,7 @@ def build_and_start_docker_container(huggingface_model_name: str) -> None:
     # --------------------------------
     # Build the docker image
     # ---------------------------------
-    docker_image_build_name = get_docker_image_build_name(huggingface_model_name)
+    docker_image_build_name = get_docker_image_build_name(huggingface_model_name, additional_data)
     subprocess.run(
         ["docker", "build", "-t", docker_image_build_name, "."],
         cwd=hf_model_directory,
@@ -107,12 +107,13 @@ def build_and_start_docker_container(huggingface_model_name: str) -> None:
     update_service_disk_size(
         huggingface_model_name,
         int(docker_image_size_bytes),
+        additional_data
     )
 
     # --------------------------------
     # stop the docker container if it is running
     # --------------------------------
-    container_name = get_docker_container_run_name(huggingface_model_name)
+    container_name = get_docker_container_run_name(huggingface_model_name, additional_data)
     try:
         subprocess.run(
             ["docker", "stop", container_name],
@@ -134,7 +135,7 @@ def build_and_start_docker_container(huggingface_model_name: str) -> None:
             "run",
             "-d",
             "--name",
-            get_docker_container_run_name(huggingface_model_name),
+            get_docker_container_run_name(huggingface_model_name, additional_data),
             "--env",
             f"NODE_ID={profile_node_id}",
             "-p",
@@ -146,7 +147,7 @@ def build_and_start_docker_container(huggingface_model_name: str) -> None:
             "--health-retries=3",
         ]
         + (["--gpus", "all"] if enable_gpu else [])
-        + [get_docker_image_build_name(huggingface_model_name)]
+        + [get_docker_image_build_name(huggingface_model_name, additional_data)]
     )
     print(f"Running command: {' '.join(cmd)}")
     subprocess.run(
@@ -154,16 +155,16 @@ def build_and_start_docker_container(huggingface_model_name: str) -> None:
         check=True,
     )
     print(
-        f"Docker container {get_docker_container_run_name(huggingface_model_name)}-server started successfully."
+        f"Docker container {get_docker_container_run_name(huggingface_model_name, additional_data)} started successfully."
     )
     print(f"Access the server at http://localhost:{available_port}/run")
 
 
-def stop_docker_container(huggingface_model_name: str) -> None:
+def stop_docker_container(huggingface_model_name: str, additional_data: dict) -> None:
     # --------------------------------
     # get the model directory
     # --------------------------------
-    hf_model_directory = get_hf_model_directory(huggingface_model_name)
+    hf_model_directory = get_hf_model_directory(huggingface_model_name, additional_data)
     # reset the model directory if it exists
     assert os.path.exists(
         hf_model_directory
@@ -190,11 +191,11 @@ def stop_docker_container(huggingface_model_name: str) -> None:
         print(f"Docker container {container_name} is not running.")
 
 
-def update_container_memory_usage(huggingface_model_name: str) -> None:
+def update_container_memory_usage(huggingface_model_name: str, additional_data: dict) -> None:
     # --------------------------------
     # get the model directory
     # --------------------------------
-    hf_model_directory = get_hf_model_directory(huggingface_model_name)
+    hf_model_directory = get_hf_model_directory(huggingface_model_name, additional_data)
     # reset the model directory if it exists
     assert os.path.exists(
         hf_model_directory

@@ -6,6 +6,7 @@ from code_generation import code_generation_main
 from docker_validation import build_ai_service_base_image, build_and_start_docker_container, update_container_memory_usage, stop_docker_container
 from docker_image_upload import push_docker_image_main
 import traceback
+from model_specific_utils.yolov8_utils import YOLOv8_MODEL_ID_KEY, YOLOv8_MODEL_ID_LIST
 from utils import (
     get_hf_model_directory,
     copy_test_image,
@@ -13,59 +14,81 @@ from utils import (
     prepare_service_data_json,
 )
 
-huggingface_model_name_default = "microsoft/resnet-50"  # Example model name
-huggingface_model_name = huggingface_model_name_default
+huggingface_model_name = "microsoft/resnet-50"
+additional_data = {}
+
+def prompt_for_model_name():
+    global huggingface_model_name, additional_data
+
+    new_model_name = input(f"Enter the Hugging Face model name (default: {huggingface_model_name}): ")
+    if new_model_name.strip():
+        huggingface_model_name = new_model_name
+    
+    # handle special cases
+    if huggingface_model_name == "Ultralytics/YOLOv8":
+        while True:
+            # ask for specific model_id inside the YOLOv8 repo
+            if YOLOv8_MODEL_ID_KEY not in additional_data:
+                print(f"Available YOLOv8 model IDs: {YOLOv8_MODEL_ID_LIST}")
+                yolov8_model_id = input(
+                    f"Enter the YOLOv8 model ID (default: {YOLOv8_MODEL_ID_LIST[0]}): "
+                ).strip()
+                if not yolov8_model_id:
+                    yolov8_model_id = YOLOv8_MODEL_ID_LIST[0]
+            else:
+                print(f"Available YOLOv8 model IDs: {YOLOv8_MODEL_ID_LIST}")
+                yolov8_model_id = input(
+                    f"Enter the YOLOv8 model ID (default: {additional_data[YOLOv8_MODEL_ID_KEY]}): "
+                ).strip()
+                if not yolov8_model_id:
+                    yolov8_model_id = additional_data[YOLOv8_MODEL_ID_KEY]
+
+            if not yolov8_model_id or yolov8_model_id not in YOLOv8_MODEL_ID_LIST:
+                print(
+                    f"The model ID '{yolov8_model_id}' is invalid. Please choose from the available options."
+                )
+                continue
+
+            additional_data[YOLOv8_MODEL_ID_KEY] = yolov8_model_id
+            break
+
 
 def option_build_service_base_image():
     """Build the base image for the AI service."""
-    global huggingface_model_name
     build_ai_service_base_image()
     print("Base image build completed successfully.")
 
 def option_code_generation():
     """Generate codes to wrap a given AI model into a FastAPI service."""
-    global huggingface_model_name
-
-    new_model_name = input(f"Enter the Hugging Face model name (default: {huggingface_model_name}): ")
-    if new_model_name.strip():
-        huggingface_model_name = new_model_name
-    code_generation_main(huggingface_model_name)
+    global huggingface_model_name, additional_data
+    prompt_for_model_name()
+    code_generation_main(huggingface_model_name, additional_data)
     print("Code generation completed successfully.")
 
 def option_prepare_model_service_data():
     """Prepare model service data json."""
-    global huggingface_model_name
-
-    new_model_name = input(f"Enter the Hugging Face model name (default: {huggingface_model_name}): ")
-    if new_model_name.strip():
-        huggingface_model_name = new_model_name
-
-    prepare_service_data_json(huggingface_model_name)
+    global huggingface_model_name, additional_data
+    prompt_for_model_name()
+    prepare_service_data_json(huggingface_model_name, additional_data)
     print(f"service_data.json prepared succesfully.")
 
 def option_build_and_run_docker_container():
     """Build and run the docker container for the AI service."""
-    global huggingface_model_name
-
-    new_model_name = input(f"Enter the Hugging Face model name (default: {huggingface_model_name}): ")
-    if new_model_name.strip():
-        huggingface_model_name = new_model_name
-    build_and_start_docker_container(huggingface_model_name)
+    global huggingface_model_name, additional_data
+    prompt_for_model_name()
+    build_and_start_docker_container(huggingface_model_name, additional_data)
     print("Docker validation and container startup completed successfully.")
 
 def option_push_docker_image():
     """Push the docker image to the Docker Hub."""
-    global huggingface_model_name
-
-    new_model_name = input(f"Enter the Hugging Face model name (default: {huggingface_model_name}): ")
-    if new_model_name.strip():
-        huggingface_model_name = new_model_name
-    push_docker_image_main(huggingface_model_name)
+    global huggingface_model_name, additional_data
+    prompt_for_model_name()
+    push_docker_image_main(huggingface_model_name, additional_data)
     print("Docker image upload completed successfully.")
 
 def option_open_client_script_terminal():
     """Open another terminal to test the AI service."""
-    global huggingface_model_name
+    global huggingface_model_name, additional_data
 
     print("Opening a new terminal to test the AI service...")
     print("Please run the client script in the new terminal.")
@@ -74,10 +97,9 @@ def option_open_client_script_terminal():
 
     python_executable = sys.executable
     
-    new_model_name = input(f"Enter the Hugging Face model name (default: {huggingface_model_name}): ")
-    if new_model_name.strip():
-        huggingface_model_name = new_model_name
-    ai_model_directory = get_hf_model_directory(huggingface_model_name)
+    prompt_for_model_name()
+
+    ai_model_directory = get_hf_model_directory(huggingface_model_name, additional_data)
 
     # Check if system is Windows or Linux/Mac
     # Start a new terminal, change to folder to the model directory, and run the client script
@@ -94,26 +116,21 @@ def option_open_client_script_terminal():
 
 def option_copy_test_image():
     """Copy a test image for the Hugging Face model."""
-    global huggingface_model_name
+    global huggingface_model_name, additional_data
+    prompt_for_model_name()
 
-    new_model_name = input(f"Enter the Hugging Face model name (default: {huggingface_model_name}): ")
-    if new_model_name.strip():
-        huggingface_model_name = new_model_name
     try:
-        test_image_path = copy_test_image(huggingface_model_name)
+        test_image_path = copy_test_image(huggingface_model_name, additional_data)
         print(f"Test image copied successfully: {test_image_path}")
     except Exception as e:
         print(f"Error: {e}")
 
 def option_update_ai_service_database():
     """Update the edge AI service database."""
-    global huggingface_model_name
-    
-    new_model_name = input(f"Enter the Hugging Face model name (default: {huggingface_model_name}): ")
-    if new_model_name.strip():
-        huggingface_model_name = new_model_name
+    global huggingface_model_name, additional_data
+    prompt_for_model_name()
     try:
-        update_ai_service_db(huggingface_model_name)
+        update_ai_service_db(huggingface_model_name, additional_data)
         print("Edge AI service database updated successfully.")
     except Exception as e:
         print(f"Error: {e}")
@@ -121,27 +138,20 @@ def option_update_ai_service_database():
 
 def option_update_container_memory_usage():
     """Manually update the container cpu memory and device memory usage."""
-
-    global huggingface_model_name
-
-    new_model_name = input(f"Enter the Hugging Face model name (default: {huggingface_model_name}): ")
-    if new_model_name.strip():
-        huggingface_model_name = new_model_name
+    global huggingface_model_name, additional_data
+    prompt_for_model_name()
     try:
-        update_container_memory_usage(huggingface_model_name)
+        update_container_memory_usage(huggingface_model_name, additional_data)
         print("Container memory usage updated successfully.")
     except Exception as e:
         print(f"Error: {e}")
 
 def option_stop_docker_container():
     """Stop the docker container."""
-    global huggingface_model_name
-
-    new_model_name = input(f"Enter the Hugging Face model name (default: {huggingface_model_name}): ")
-    if new_model_name.strip():
-        huggingface_model_name = new_model_name
+    global huggingface_model_name, additional_data
+    prompt_for_model_name()
     try:
-        stop_docker_container(huggingface_model_name)
+        stop_docker_container(huggingface_model_name, additional_data)
         print("Docker container stopped successfully.")
     except Exception as e:
         print(f"Error: {e}")

@@ -13,9 +13,9 @@ from utils import (
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", "..", ".env"))
 
 
-def push_docker_image_main(huggingface_model_name: str) -> None:
+def push_docker_image_main(huggingface_model_name: str, additional_data: dict) -> None:
     # check if the docker image exists
-    ai_service_image_name = get_docker_image_build_name(huggingface_model_name)
+    ai_service_image_name = get_docker_image_build_name(huggingface_model_name, additional_data)
 
     try:
         subprocess.run(
@@ -34,7 +34,7 @@ def push_docker_image_main(huggingface_model_name: str) -> None:
     # --------------------------------
     # Push the docker image to docker hub
     # ---------------------------------
-    docker_image_repository_url = get_image_repository_full_url(huggingface_model_name)
+    docker_image_repository_url = get_image_repository_full_url(huggingface_model_name, additional_data)
 
     print(f"Pushing the docker image '{docker_image_repository_url}' to Docker Hub...")
     subprocess.run(
@@ -56,7 +56,7 @@ def push_docker_image_main(huggingface_model_name: str) -> None:
     # --------------------------------
     # Update the service_data.json file
     # ---------------------------------
-    hf_model_directory = get_hf_model_directory(huggingface_model_name)
+    hf_model_directory = get_hf_model_directory(huggingface_model_name, additional_data)
     service_data_json_path = os.path.join(
         hf_model_directory, SERVICE_DATA_JSON_NAME
     )

@@ -7,7 +7,6 @@ from utils import (
     AI_SERVER_UTILS_SCRIPT_NAME,
     COMPLETE_SERVICE_FILE_LIST,
     HEALTHCHECK_SCRIPT_NAME,
-    NECESSARY_SERVICE_FILE_LIST,
     XAI_MODEL_SCRIPT_NAME,
     copy_file_from_example_model_folder,
     download_model_readme,
@@ -23,7 +22,7 @@ from utils import (
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", "..", ".env"))
 
 
-def code_generation_main(huggingface_model_name: str) -> None:
+def code_generation_main(huggingface_model_name: str, additional_data: dict) -> None:
 
     # validate the hugging face model name
     if not validate_hf_model_name(huggingface_model_name):
@@ -34,7 +33,7 @@ def code_generation_main(huggingface_model_name: str) -> None:
         raise (f"The model '{huggingface_model_name}' does not have a README file.")
 
     example_model_name = "example/image-model"
-    example_model_directory = get_hf_model_directory(example_model_name)
+    example_model_directory = get_hf_model_directory(example_model_name, None)
     assert os.path.exists(
         example_model_directory
     ), f"The example model directory '{example_model_directory}' does not exist."
@@ -52,7 +51,7 @@ def code_generation_main(huggingface_model_name: str) -> None:
     # --------------------------------
     # prepare the model output directory
     # --------------------------------
-    hf_model_directory = get_hf_model_directory(huggingface_model_name)
+    hf_model_directory = get_hf_model_directory(huggingface_model_name, additional_data)
     # reset the model directory if it exists
     if os.path.exists(hf_model_directory):
         shutil.rmtree(hf_model_directory)
@@ -63,45 +62,26 @@ def code_generation_main(huggingface_model_name: str) -> None:
     output_files_content = {}
 
     # --------------------------------
-    # Copy the healthcheck.py file directly
-    # --------------------------------
-    copy_file_from_example_model_folder(
+    #  Copy common scripts
+    # -------------------------------
+    for file_name_to_copy in [
         HEALTHCHECK_SCRIPT_NAME,
-        hf_model_directory, example_model_files_content, output_files_content
-    )
-    print(f"Healthcheck file copied to {hf_model_directory}.")
-
-    # --------------------------------
-    # Copy the ai_server.py file directly
-    # --------------------------------
-    copy_file_from_example_model_folder(
         AI_SERVER_SCRIPT_NAME,
-        hf_model_directory, example_model_files_content, output_files_content
-    )
-    print(f"AI server file copied to {hf_model_directory}.")
-
-    # --------------------------------
-    # Copy the ai_server_utils.py file directly
-    # --------------------------------
-    copy_file_from_example_model_folder(
         AI_SERVER_UTILS_SCRIPT_NAME,
-        hf_model_directory, example_model_files_content, output_files_content
-    )
-    print(f"AI server utils file copied to {hf_model_directory}.")
-
-    # --------------------------------
-    # Copy the ai_client.py file directly
-    # --------------------------------
-    copy_file_from_example_model_folder(
         AI_CLIENT_SCRIPT_NAME,
-        hf_model_directory, example_model_files_content, output_files_content
-    )
-    print(f"AI client script copied to {hf_model_directory}.")
+    ]:
+        copy_file_from_example_model_folder(
+            file_name_to_copy,
+            hf_model_directory,
+            example_model_files_content,
+            output_files_content,
+        )
+        print(f"File {file_name_to_copy} copied to {hf_model_directory}.")
 
     # --------------------------------
     # Download the README file
     # --------------------------------
-    download_model_readme(huggingface_model_name)
+    download_model_readme(huggingface_model_name, additional_data)
     print(f"README file downloaded to {hf_model_directory}.")
 
     # --------------------------------
@@ -113,19 +93,23 @@ def code_generation_main(huggingface_model_name: str) -> None:
         example_model_files_content,
         output_files_content,
         hf_model_directory,
+        additional_data
     )
     print(f"AI model script generated and saved.")
-    
+
     # --------------------------------
-    # Generate the xai_model.py if applicable
+    # copy the xai_model.py if applicable
     # ---------------------------------
     model_task = get_model_pipeline_tag(huggingface_model_name)
     # currently only image-classification is supported for XAI
     xai_enabled = model_task == "image-classification"
+    # placeholder for other checks in the future
     if xai_enabled:
         copy_file_from_example_model_folder(
             XAI_MODEL_SCRIPT_NAME,
-            hf_model_directory, example_model_files_content, output_files_content
+            hf_model_directory,
+            example_model_files_content,
+            output_files_content,
         )
         print(f"XAI model script copied.")
     else:
@@ -140,6 +124,7 @@ def code_generation_main(huggingface_model_name: str) -> None:
         example_model_files_content,
         output_files_content,
         hf_model_directory,
+        additional_data,
     )
     print(f"Dockerfile generated and saved.")
 
@@ -152,6 +137,7 @@ def code_generation_main(huggingface_model_name: str) -> None:
         example_model_files_content,
         output_files_content,
         hf_model_directory,
+        additional_data
     )
     print(f"AI client utils script generated and saved.")
 

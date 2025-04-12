@@ -23,7 +23,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # Model-specific configuration
 # make sure the variables `MODEL_NAME` and `model` are defined here.
 # --------------------------------
-MODEL_NAME = "ultralytics/yolov8x"
+MODEL_NAME = "Ultralytics/YOLOv8n"
 model = YOLO(MODEL_NAME).to(device)
 model.eval()
 
@@ -110,13 +110,13 @@ async def profile_run(file: UploadFile = File(...), ue_id: str = Form(...)):
 MODEL_INPUT_FORM_SPEC = {
     "file": {
         "type": "file upload",
-        "description": "The image file to be processed for object detection.",
+        "description": "The image file to be processed.",
         "required": True,
-        "example": "bus.jpg",
+        "example": "puppy.png",
     }
 }
 
 MODEL_OUTPUT_JSON_SPEC = {
     "ue_id": "unique execution ID",
-    "model_results": "binary content of the image with detections",
+    "model_results": "binary content of the processed image",
 }

@@ -4,6 +4,10 @@ import requests
 import socket
 from openai import OpenAI
 
+from model_specific_utils.yolov8_utils import (
+    YOLOv8_MODEL_ID_KEY,
+)
+
 AI_SERVER_SCRIPT_NAME = "ai_server.py"
 AI_SERVER_UTILS_SCRIPT_NAME = "ai_server_utils.py"
 AI_CLIENT_SCRIPT_NAME = "ai_client.py"
@@ -25,9 +29,34 @@ NECESSARY_SERVICE_FILE_LIST = [
     SERVICE_DATA_JSON_NAME,
 ]
 
-COMPLETE_SERVICE_FILE_LIST = NECESSARY_SERVICE_FILE_LIST + [
-    XAI_MODEL_SCRIPT_NAME
-]
+COMPLETE_SERVICE_FILE_LIST = NECESSARY_SERVICE_FILE_LIST + [XAI_MODEL_SCRIPT_NAME]
+
+def prompt_for_additional_guidance(current_task: str, additional_data: dict) -> str:
+    # --------------------------------
+    # ask for additional help information from the user to be more flexible
+    # --------------------------------
+    additional_guidance = ""
+    if additional_data:
+        additional_guidance = (
+            "\n----------------\nBelow are information you should pay attention to:\n"
+        )
+        for key, value in additional_data.items():
+            additional_guidance += f"{key}: {value}\n"
+
+    manual_guidance = input(
+        f"\nCurrent guidance for the LLM agent to perform the task: {current_task} \n"
+        f"{additional_guidance}\n"
+        "Do you have any other helpful guidance or instructions for the LLM agent?: "
+    )
+    if manual_guidance.strip():
+        manual_guidance = manual_guidance.strip()
+    else:
+        manual_guidance = ""
+
+    additional_guidance += "\n" + manual_guidance
+
+    return additional_guidance
+
 
 
 def validate_hf_model_name(model_name: str) -> bool:
@@ -41,9 +70,20 @@ def validate_hf_model_name(model_name: str) -> bool:
         return False
 
 
-def get_hf_model_directory(model_name: str) -> str:
+def get_hf_model_directory(model_name: str, additional_data) -> str:
     """Get the directory for the Hugging Face model."""
     # Assuming the model directory is structured as 'models/{model_name}'
+
+    # handle special cases
+    if additional_data and additional_data[YOLOv8_MODEL_ID_KEY] is not None:
+        return os.path.join(
+            os.path.dirname(__file__),
+            "..",
+            "..",
+            "models",
+            f"huggingface-{model_name.replace("/", "-")}-{additional_data[YOLOv8_MODEL_ID_KEY]}",
+        )
+
     return os.path.join(
         os.path.dirname(__file__),
         "..",
@@ -83,20 +123,12 @@ def generate_model_script(
     example_content: dict,
     output_files_content: dict,
     model_output_directory: str,
+    additional_data: dict,
 ) -> None:
     """Generate the model.py file."""
 
-    # --------------------------------
-    # ask for additional help information from the user to be more flexible
-    # --------------------------------
-    additional_guidance = input(
-        "Do you have any helpful guidance or instructions for the LLM agent to generate the model.py file?: "
-    )
-    if additional_guidance:
-        additional_guidance = additional_guidance.strip()
-    else:
-        additional_guidance = ""
-    
+    additional_guidance = prompt_for_additional_guidance("generate the model.py file", additional_data)
+
     client = OpenAI()
     completion = client.chat.completions.create(
         model="gpt-4o",
@@ -112,7 +144,7 @@ Below is the README file of the hugging face model:
 Below is an example model script content for your reference:
 {example_content[MODEL_SCRIPT_NAME]}
 
-{"-----------------\nBelow are additional guidance for you:\n" + additional_guidance if additional_guidance else ""}
+{additional_guidance}
 
 -----------------
 Requirements:
@@ -140,20 +172,11 @@ def generate_dockerfile(
     example_content: dict,
     output_files_content: dict,
     model_output_directory: str,
-    additional_guidance: str = "",
+    additional_data: dict,
 ) -> None:
     """Generate the Dockerfile."""
-
-    # --------------------------------
-    # ask for additional help information from the user to be more flexible
-    # --------------------------------
-    additional_guidance = input(
-        "Do you have any helpful guidance or instructions for the LLM agent to generate the Dockerfile?: "
-    )
-    if additional_guidance:
-        additional_guidance = additional_guidance.strip()
-    else:
-        additional_guidance = ""
+    
+    additional_guidance = prompt_for_additional_guidance("generate the Dockerfile", additional_data)
 
     client = OpenAI()
     completion = client.chat.completions.create(
@@ -175,7 +198,7 @@ Below is the content of `ai_server.py`
 Below is an Dockerfile example for your reference:
 {example_content[DOCKERFILE_NAME]}
 
-{"-----------------\nBelow are additional guidance for you:\n" + additional_guidance if additional_guidance else ""}
+{additional_guidance}
 
 --------------------
 Requirements:
@@ -202,20 +225,11 @@ def generate_ai_client_utils_script(
     example_content: dict,
     output_files_content: dict,
     model_output_directory: str,
-    additional_guidance: str = "",
+    additional_data: dict,
 ) -> None:
     """Generate the AI client utils file."""
 
-    # --------------------------------
-    # ask for additional help information from the user to be more flexible
-    # --------------------------------
-    additional_guidance = input(
-        "Do you have any helpful guidance or instructions for the LLM agent to generate the ai_client_utils.py file?: "
-    )
-    if additional_guidance:
-        additional_guidance = additional_guidance.strip()
-    else:
-        additional_guidance = ""
+    additional_guidance = prompt_for_additional_guidance("generate the ai_client_utils.py file", additional_data)
 
     client = OpenAI()
     completion = client.chat.completions.create(
@@ -237,7 +251,7 @@ Below is the content of the `model.py` that serves the AI model:
 Below is an example util script (for a image processing AI service) for your reference:
 {example_content[AI_CLIENT_UTILS_SCRIPT_NAME]}
 
-{"-----------------\nBelow are additional guidance for you:\n" + additional_guidance if additional_guidance else ""}
+{additional_guidance}
 
 --------------------
 Requirements:
@@ -275,21 +289,31 @@ def get_node_hostname() -> str:
     return hostname
 
 
-def get_docker_image_build_name(model_name: str) -> str:
+def get_docker_image_build_name(model_name: str, additional_data: dict) -> str:
     """Get the docker image build name."""
+
+    # handle special cases
+    if additional_data and additional_data[YOLOv8_MODEL_ID_KEY]:
+        return f"cranfield-edge-{model_name.replace('/', '-')}-{additional_data[YOLOv8_MODEL_ID_KEY]}:latest".lower()
+    
     return f"cranfield-edge-{model_name.replace('/', '-')}:latest".lower()
 
 
-def get_docker_container_run_name(model_name: str) -> str:
+def get_docker_container_run_name(model_name: str, additional_data: dict) -> str:
     """Get the docker container run name."""
+
+    # handle special cases
+    if additional_data and additional_data[YOLOv8_MODEL_ID_KEY]:
+        return f"cranfield-edge-{model_name.replace('/', '-')}-{additional_data[YOLOv8_MODEL_ID_KEY]}-server".lower()
+
     return f"cranfield-edge-{model_name.replace('/', '-')}-server".lower()
 
 
-def download_model_readme(model_name: str) -> str:
+def download_model_readme(model_name: str, additional_data: dict) -> str:
     """Download the README file for the Hugging Face model."""
     readme_content = get_hf_model_readme(model_name)
     if readme_content:
-        readme_file_path = os.path.join(get_hf_model_directory(model_name), "README.md")
+        readme_file_path = os.path.join(get_hf_model_directory(model_name, additional_data), "README.md")
         with open(readme_file_path, "w", encoding="utf-8") as file:
             file.write(readme_content)
         return readme_file_path
@@ -300,8 +324,12 @@ def download_model_readme(model_name: str) -> str:
 def draft_model_task_detail(
     model_name: str,
     model_readme,
+    additional_data: dict,
 ) -> str:
     """Let LLM to draft the task detail based on model's readme content, for better semantic searching."""
+
+    additional_guidance = prompt_for_additional_guidance("draft the task detail", additional_data)
+
     client = OpenAI()
     completion = client.chat.completions.create(
         model="gpt-4o",
@@ -313,6 +341,8 @@ def draft_model_task_detail(
 -----------------
 Below is the README file of the hugging face AI model:
 {model_readme}
+
+{additional_guidance}
 
 --------------------
 Requirements:
@@ -332,8 +362,12 @@ Requirements:
 def draft_model_accuracy_info(
     model_name: str,
     model_readme,
+    additianal_data: dict,
 ) -> str:
     """Let LLM to draft the accuracy info based on model's readme content."""
+
+    additional_guidance = prompt_for_additional_guidance("draft the accuracy info", additianal_data)
+
     client = OpenAI()
     completion = client.chat.completions.create(
         model="gpt-4o",
@@ -345,6 +379,8 @@ def draft_model_accuracy_info(
 -----------------
 Below is the README file of the hugging face AI model:
 {model_readme}
+
+{additional_guidance}
 
 --------------------
 Requirements:
@@ -361,14 +397,14 @@ Requirements:
     return acc_info_content
 
 
-def prepare_service_data_json(model_name: str) -> str:
+def prepare_service_data_json(model_name: str, additional_data: dict) -> str:
     """Copy a service_data.json for the model."""
     assert get_hf_model_directory(
-        model_name
+        model_name, additional_data
     ), f"Model directory not found for {model_name}."
 
     service_data_file = "service_data.json"
-    output_path = os.path.join(get_hf_model_directory(model_name), service_data_file)
+    output_path = os.path.join(get_hf_model_directory(model_name, additional_data), service_data_file)
 
     source_path = os.path.join(
         os.path.dirname(__file__), "common_assets", service_data_file
@@ -385,42 +421,42 @@ def prepare_service_data_json(model_name: str) -> str:
     model_readme = get_hf_model_readme(model_name)
 
     service_data_json["task_detail"] = draft_model_task_detail(
-        model_name=model_name, model_readme=model_readme
+        model_name, model_readme, additional_data
     )
     service_data_json["accuracy_info"] = draft_model_accuracy_info(
-        model_name=model_name, model_readme=model_readme
+        model_name, model_readme, additional_data
     )
 
     service_data_json["code"]["readme_content"] = model_readme
     service_data_json["code"]["dockerfile_content"] = open(
-        os.path.join(get_hf_model_directory(model_name), DOCKERFILE_NAME), "r"
+        os.path.join(get_hf_model_directory(model_name, additional_data), DOCKERFILE_NAME), "r"
     ).read()
     service_data_json["code"]["ai_server_script_content"] = open(
-        os.path.join(get_hf_model_directory(model_name), AI_SERVER_SCRIPT_NAME), "r"
+        os.path.join(get_hf_model_directory(model_name, additional_data), AI_SERVER_SCRIPT_NAME), "r"
     ).read()
     service_data_json["code"]["ai_server_utils_script_content"] = open(
-        os.path.join(get_hf_model_directory(model_name), AI_SERVER_UTILS_SCRIPT_NAME),
+        os.path.join(get_hf_model_directory(model_name, additional_data), AI_SERVER_UTILS_SCRIPT_NAME),
         "r",
     ).read()
     service_data_json["code"]["ai_client_script_content"] = open(
-        os.path.join(get_hf_model_directory(model_name), AI_CLIENT_SCRIPT_NAME), "r"
+        os.path.join(get_hf_model_directory(model_name, additional_data), AI_CLIENT_SCRIPT_NAME), "r"
     ).read()
     service_data_json["code"]["ai_client_utils_script_content"] = open(
-        os.path.join(get_hf_model_directory(model_name), AI_CLIENT_UTILS_SCRIPT_NAME),
+        os.path.join(get_hf_model_directory(model_name, additional_data), AI_CLIENT_UTILS_SCRIPT_NAME),
         "r",
     ).read()
     service_data_json["code"]["model_script_content"] = open(
-        os.path.join(get_hf_model_directory(model_name), MODEL_SCRIPT_NAME), "r"
+        os.path.join(get_hf_model_directory(model_name, additional_data), MODEL_SCRIPT_NAME), "r"
     ).read()
     service_data_json["code"]["healthcheck_script_content"] = open(
-        os.path.join(get_hf_model_directory(model_name), HEALTHCHECK_SCRIPT_NAME), "r"
+        os.path.join(get_hf_model_directory(model_name, additional_data), HEALTHCHECK_SCRIPT_NAME), "r"
     ).read()
 
     if os.path.exists(
-        os.path.join(get_hf_model_directory(model_name), XAI_MODEL_SCRIPT_NAME)
+        os.path.join(get_hf_model_directory(model_name, additional_data), XAI_MODEL_SCRIPT_NAME)
     ):
         service_data_json["code"]["xai_model_script_content"] = open(
-            os.path.join(get_hf_model_directory(model_name), XAI_MODEL_SCRIPT_NAME),
+            os.path.join(get_hf_model_directory(model_name, additional_data), XAI_MODEL_SCRIPT_NAME),
             "r",
         ).read()
 
@@ -428,10 +464,10 @@ def prepare_service_data_json(model_name: str) -> str:
         dest_file.write(json.dumps(service_data_json, indent=4))
 
 
-def copy_test_image(model_name: str) -> str:
+def copy_test_image(model_name: str, additional_data: dict) -> str:
     """Copy a test image for the model."""
     assert get_hf_model_directory(
-        model_name
+        model_name, additional_data
     ), f"Model directory not found for {model_name}."
 
     # get all image files in the common_assets directory
@@ -451,7 +487,7 @@ def copy_test_image(model_name: str) -> str:
     ), f"Invalid selection: {selected_index + 1}. Please select a valid image number."
     test_image_file = test_image_files[selected_index]
     test_image_output_path = os.path.join(
-        get_hf_model_directory(model_name), test_image_file
+        get_hf_model_directory(model_name, additional_data), test_image_file
     )
     test_image_source_path = os.path.join(
         os.path.dirname(__file__), "common_assets", test_image_file
@@ -461,9 +497,9 @@ def copy_test_image(model_name: str) -> str:
             dest_file.write(source_file.read())
 
 
-def get_image_repository_name(model_name: str) -> str:
+def get_image_repository_name(model_name: str, additional_data: dict) -> str:
     """Get the name of the docker image."""
-    ai_service_image_name = get_docker_image_build_name(model_name).replace(
+    ai_service_image_name = get_docker_image_build_name(model_name, additional_data).replace(
         ":latest", ""
     )
     docker_username = os.getenv("DOCKER_USERNAME")
@@ -472,12 +508,11 @@ def get_image_repository_name(model_name: str) -> str:
     return image_repository_name
 
 
-def get_image_repository_full_url(model_name: str) -> str:
+def get_image_repository_full_url(model_name: str, additional_data: dict) -> str:
     """Get the full name of the docker image."""
-    image_repository_name = get_image_repository_name(model_name)
+    image_repository_name = get_image_repository_name(model_name, additional_data)
     docker_registry = os.getenv("DOCKER_REGISTRY", "docker.io")
-    docker_image_repository_url = f"{docker_registry}/{image_repository_name}"
-    return docker_image_repository_url
+    return f"{docker_registry}/{image_repository_name}"
 
 
 def get_model_pipeline_tag(model_name: str) -> str:
@@ -492,9 +527,9 @@ def get_model_pipeline_tag(model_name: str) -> str:
         return "unknown"
 
 
-def validate_image_repository(model_name: str) -> bool:
+def validate_image_repository(model_name: str, additional_data: dict) -> bool:
     """Validate the image repository."""
-    repository_name = get_image_repository_name(model_name)
+    repository_name = get_image_repository_name(model_name, additional_data)
     docker_hub_repo_api_url = (
         f"https://hub.docker.com/v2/repositories/{repository_name}"
     )
@@ -514,7 +549,7 @@ def validate_image_repository(model_name: str) -> bool:
         return False
 
 
-def update_ai_service_db(model_name: str) -> None:
+def update_ai_service_db(model_name: str, additional_data: dict) -> None:
     """Update the edge AI service database."""
 
     # validate the model name
@@ -523,11 +558,11 @@ def update_ai_service_db(model_name: str) -> None:
 
     # validate the availability of docker image
     assert validate_image_repository(
-        model_name
+        model_name, additional_data
     ), f"Invalid image repository: {model_name}. Make sure you have successfully pushed the image to the repository."
     print(f"Image repository {model_name} is valid.")
 
-    hf_model_directory = get_hf_model_directory(model_name)
+    hf_model_directory = get_hf_model_directory(model_name, additional_data)
     service_data_json_path = os.path.join(hf_model_directory, SERVICE_DATA_JSON_NAME)
     assert os.path.exists(
         service_data_json_path
@@ -568,9 +603,9 @@ def update_ai_service_db(model_name: str) -> None:
             print(f"Error creating AI service: {response.status_code}, {response.text}")
 
 
-def update_service_disk_size(model_name: str, size_in_bytes: int):
+def update_service_disk_size(model_name: str, size_in_bytes: int, additional_data: dict) -> None:
     service_data_json_file = os.path.join(
-        get_hf_model_directory(model_name), "service_data.json"
+        get_hf_model_directory(model_name, additional_data), "service_data.json"
     )
     with open(service_data_json_file, "r") as file:
         service_data = json.load(file)
