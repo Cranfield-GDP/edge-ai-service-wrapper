@@ -329,6 +329,19 @@ def option_run():
     print("Response")
     print(json.dumps(response, indent=4))
 
+    # display the visualization image
+    if response and "visualization" in response:
+        visualization = response["visualization"]
+        if visualization:
+            image_bytes = base64.b64decode(visualization)
+            image = Image.open(BytesIO(image_bytes))
+            plt.imshow(image)
+            plt.axis("off")
+            plt.show()
+        else:
+            print("No visualization image found in the response.")
+
+
 
 def option_profile_run():
     data = prepare_ai_service_request_data()
