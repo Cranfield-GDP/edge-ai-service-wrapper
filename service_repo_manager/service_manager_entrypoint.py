@@ -1,11 +1,15 @@
-import argparse
+import sys
 import os
 import json
 import time
 from pymongo import MongoClient
+from rich.console import Console
+from rich.table import Table
+import traceback
 
-
-DEFAULT_OUTPUT_FILE = os.path.join(os.path.dirname(__file__), "database_storage", f"cranfield_ai_services__{time.time()}.json")
+DEFAULT_OUTPUT_FILE = os.path.join(
+    os.path.dirname(__file__), "database_storage", f"cranfield_ai_services__{time.time()}.json"
+)
 DEFAULT_MONGO_URI = "mongodb://user:pass@localhost:27017/?directConnection=true"
 
 def export_mongodb_to_json(uri, database_name, collection_name, output_file):
@@ -33,45 +37,62 @@ def export_mongodb_to_json(uri, database_name, collection_name, output_file):
     finally:
         client.close()
 
+def option_export_mongodb_to_json():
+    """Export MongoDB data to a JSON file."""
+    try:
+        uri = input(f"Enter MongoDB URI (default: {DEFAULT_MONGO_URI}): ").strip() or DEFAULT_MONGO_URI
+        database_name = input("Enter the database name (default: cranfield_ai_services): ").strip() or "cranfield_ai_services"
+        collection_name = input("Enter the collection name (default: ai_services): ").strip() or "ai_services"
+        output_file = input(f"Enter the output file path (default: {DEFAULT_OUTPUT_FILE}): ").strip() or DEFAULT_OUTPUT_FILE
+
+        export_mongodb_to_json(uri, database_name, collection_name, output_file)
+    except Exception as e:
+        print(f"Error: {e}")
+
+OPTIONS = [
+    {
+        "label": "Export MongoDB data to a JSON file",
+        "function": option_export_mongodb_to_json,
+    },
+]
+
 def main():
-    parser = argparse.ArgumentParser(description="Edge Manager Entrypoint Script")
-    parser.add_argument(
-        "--option",
-        type=int,
-        required=True,
-        help="Choose an option: 1 - Export MongoDB data to JSON"
-    )
-    parser.add_argument(
-        "--mongo-uri",
-        type=str,
-        default=DEFAULT_MONGO_URI,
-        help=f"MongoDB connection URI (default: {DEFAULT_MONGO_URI})"
-    )
-    parser.add_argument(
-        "--database",
-        type=str,
-        default="cranfield_ai_services",
-        help="Name of the MongoDB database (default: cranfield_ai_services)"
-    )
-    parser.add_argument(
-        "--collection",
-        type=str,
-        default="ai_services",
-        help="Name of the MongoDB collection (default: ai_services)"
-    )
-    parser.add_argument(
-        "--output",
-        type=str,
-        default=DEFAULT_OUTPUT_FILE,
-        help=f"Output JSON file name (default: {DEFAULT_OUTPUT_FILE})"
-    )
+    console = Console()
 
-    args = parser.parse_args()
+    while True:
+        # Create a Rich table for the options
+        table = Table(title="Service Manager Options")
+        table.add_column("Option", justify="center", style="cyan", no_wrap=True)
+        table.add_column("Description", style="yellow")
 
-    if args.option == 1:
-        export_mongodb_to_json(args.mongo_uri, args.database, args.collection, args.output)
-    else:
-        print("Invalid option. Currently, only option 1 is supported.")
+        for i, option in enumerate(OPTIONS, start=1):
+            table.add_row(str(i), option["label"])
+            # Add a separator row for better readability
+            table.add_row("", "[dim]-----------------------------[/dim]")
+
+        # Add the Quit option at the end
+        table.add_row("q", "Quit")
+
+        # Print the table
+        console.print(table)
+
+        try:
+            choice = input("Enter your choice (1 or 'q' to quit): ").strip()
+            
+            if choice == "q":
+                console.print("[bold green]Exiting the program. Goodbye![/bold green]")
+                sys.exit(0)
+            elif choice.isdigit() and 1 <= int(choice) <= len(OPTIONS):
+                option = OPTIONS[int(choice) - 1]
+                console.print(f"[bold yellow]Executing:[/bold yellow] {option['label']}")
+                option["function"]()
+            else:
+                console.print("[bold red]Invalid choice. Please select a valid option (1 or 'q').[/bold red]")
+        
+        except Exception as e:
+            console.print(f"[bold red]An error occurred:[/bold red] {e}")
+            traceback.print_exc()
+            console.print("[bold red]Returning to the main menu...[/bold red]")
 
 if __name__ == "__main__":
     main()
