@@ -9,7 +9,7 @@ import traceback
 from model_specific_utils.yolov8_utils import YOLOv8_MODEL_ID_KEY, YOLOv8_MODEL_ID_LIST
 from utils import (
     get_hf_model_directory,
-    copy_test_image,
+    copy_test_file,
     update_ai_service_db,
     prepare_service_data_json,
 )
@@ -114,14 +114,14 @@ def option_open_client_script_terminal():
             shell=True,
         )
 
-def option_copy_test_image():
-    """Copy a test image for the Hugging Face model."""
+def option_copy_test_file():
+    """Copy a test file for the Hugging Face model."""
     global huggingface_model_name, additional_data
     prompt_for_model_name()
 
     try:
-        test_image_path = copy_test_image(huggingface_model_name, additional_data)
-        print(f"Test image copied successfully: {test_image_path}")
+        test_file_path = copy_test_file(huggingface_model_name, additional_data)
+        print(f"Test file copied successfully: {test_file_path}")
     except Exception as e:
         print(f"Error: {e}")
 
@@ -175,8 +175,8 @@ OPTIONS = [
         "function": option_build_and_run_docker_container,
     },
     {
-        "label": "Copy a test image to the model directory",
-        "function": option_copy_test_image,
+        "label": "Copy a test file to the model directory",
+        "function": option_copy_test_file,
     },
     {
         "label": "Open another terminal to test the AI service",

@@ -31,6 +31,7 @@ NECESSARY_SERVICE_FILE_LIST = [
 
 COMPLETE_SERVICE_FILE_LIST = NECESSARY_SERVICE_FILE_LIST + [XAI_MODEL_SCRIPT_NAME]
 
+
 def prompt_for_additional_guidance(current_task: str, additional_data: dict) -> str:
     # --------------------------------
     # ask for additional help information from the user to be more flexible
@@ -56,7 +57,6 @@ def prompt_for_additional_guidance(current_task: str, additional_data: dict) -> 
     additional_guidance += "\n" + manual_guidance
 
     return additional_guidance
-
 
 
 def validate_hf_model_name(model_name: str) -> bool:
@@ -127,7 +127,9 @@ def generate_model_script(
 ) -> None:
     """Generate the model.py file."""
 
-    additional_guidance = prompt_for_additional_guidance("generate the model.py file", additional_data)
+    additional_guidance = prompt_for_additional_guidance(
+        "generate the model.py file", additional_data
+    )
 
     client = OpenAI()
     completion = client.chat.completions.create(
@@ -175,8 +177,10 @@ def generate_dockerfile(
     additional_data: dict,
 ) -> None:
     """Generate the Dockerfile."""
-    
-    additional_guidance = prompt_for_additional_guidance("generate the Dockerfile", additional_data)
+
+    additional_guidance = prompt_for_additional_guidance(
+        "generate the Dockerfile", additional_data
+    )
 
     client = OpenAI()
     completion = client.chat.completions.create(
@@ -229,7 +233,9 @@ def generate_ai_client_utils_script(
 ) -> None:
     """Generate the AI client utils file."""
 
-    additional_guidance = prompt_for_additional_guidance("generate the ai_client_utils.py file", additional_data)
+    additional_guidance = prompt_for_additional_guidance(
+        "generate the ai_client_utils.py file", additional_data
+    )
 
     client = OpenAI()
     completion = client.chat.completions.create(
@@ -295,7 +301,7 @@ def get_docker_image_build_name(model_name: str, additional_data: dict) -> str:
     # handle special cases
     if additional_data and additional_data[YOLOv8_MODEL_ID_KEY]:
         return f"cranfield-edge-{model_name.replace('/', '-')}-{additional_data[YOLOv8_MODEL_ID_KEY]}:latest".lower()
-    
+
     return f"cranfield-edge-{model_name.replace('/', '-')}:latest".lower()
 
 
@@ -313,7 +319,9 @@ def download_model_readme(model_name: str, additional_data: dict) -> str:
     """Download the README file for the Hugging Face model."""
     readme_content = get_hf_model_readme(model_name)
     if readme_content:
-        readme_file_path = os.path.join(get_hf_model_directory(model_name, additional_data), "README.md")
+        readme_file_path = os.path.join(
+            get_hf_model_directory(model_name, additional_data), "README.md"
+        )
         with open(readme_file_path, "w", encoding="utf-8") as file:
             file.write(readme_content)
         return readme_file_path
@@ -328,7 +336,9 @@ def draft_model_task_detail(
 ) -> str:
     """Let LLM to draft the task detail based on model's readme content, for better semantic searching."""
 
-    additional_guidance = prompt_for_additional_guidance("draft the task detail", additional_data)
+    additional_guidance = prompt_for_additional_guidance(
+        "draft the task detail", additional_data
+    )
 
     client = OpenAI()
     completion = client.chat.completions.create(
@@ -366,7 +376,9 @@ def draft_model_accuracy_info(
 ) -> str:
     """Let LLM to draft the accuracy info based on model's readme content."""
 
-    additional_guidance = prompt_for_additional_guidance("draft the accuracy info", additianal_data)
+    additional_guidance = prompt_for_additional_guidance(
+        "draft the accuracy info", additianal_data
+    )
 
     client = OpenAI()
     completion = client.chat.completions.create(
@@ -404,7 +416,9 @@ def prepare_service_data_json(model_name: str, additional_data: dict) -> str:
     ), f"Model directory not found for {model_name}."
 
     service_data_file = "service_data.json"
-    output_path = os.path.join(get_hf_model_directory(model_name, additional_data), service_data_file)
+    output_path = os.path.join(
+        get_hf_model_directory(model_name, additional_data), service_data_file
+    )
 
     source_path = os.path.join(
         os.path.dirname(__file__), "common_assets", service_data_file
@@ -429,34 +443,60 @@ def prepare_service_data_json(model_name: str, additional_data: dict) -> str:
 
     service_data_json["code"]["readme_content"] = model_readme
     service_data_json["code"]["dockerfile_content"] = open(
-        os.path.join(get_hf_model_directory(model_name, additional_data), DOCKERFILE_NAME), "r"
+        os.path.join(
+            get_hf_model_directory(model_name, additional_data), DOCKERFILE_NAME
+        ),
+        "r",
     ).read()
     service_data_json["code"]["ai_server_script_content"] = open(
-        os.path.join(get_hf_model_directory(model_name, additional_data), AI_SERVER_SCRIPT_NAME), "r"
+        os.path.join(
+            get_hf_model_directory(model_name, additional_data), AI_SERVER_SCRIPT_NAME
+        ),
+        "r",
     ).read()
     service_data_json["code"]["ai_server_utils_script_content"] = open(
-        os.path.join(get_hf_model_directory(model_name, additional_data), AI_SERVER_UTILS_SCRIPT_NAME),
+        os.path.join(
+            get_hf_model_directory(model_name, additional_data),
+            AI_SERVER_UTILS_SCRIPT_NAME,
+        ),
         "r",
     ).read()
     service_data_json["code"]["ai_client_script_content"] = open(
-        os.path.join(get_hf_model_directory(model_name, additional_data), AI_CLIENT_SCRIPT_NAME), "r"
+        os.path.join(
+            get_hf_model_directory(model_name, additional_data), AI_CLIENT_SCRIPT_NAME
+        ),
+        "r",
     ).read()
     service_data_json["code"]["ai_client_utils_script_content"] = open(
-        os.path.join(get_hf_model_directory(model_name, additional_data), AI_CLIENT_UTILS_SCRIPT_NAME),
+        os.path.join(
+            get_hf_model_directory(model_name, additional_data),
+            AI_CLIENT_UTILS_SCRIPT_NAME,
+        ),
         "r",
     ).read()
     service_data_json["code"]["model_script_content"] = open(
-        os.path.join(get_hf_model_directory(model_name, additional_data), MODEL_SCRIPT_NAME), "r"
+        os.path.join(
+            get_hf_model_directory(model_name, additional_data), MODEL_SCRIPT_NAME
+        ),
+        "r",
     ).read()
     service_data_json["code"]["healthcheck_script_content"] = open(
-        os.path.join(get_hf_model_directory(model_name, additional_data), HEALTHCHECK_SCRIPT_NAME), "r"
+        os.path.join(
+            get_hf_model_directory(model_name, additional_data), HEALTHCHECK_SCRIPT_NAME
+        ),
+        "r",
     ).read()
 
     if os.path.exists(
-        os.path.join(get_hf_model_directory(model_name, additional_data), XAI_MODEL_SCRIPT_NAME)
+        os.path.join(
+            get_hf_model_directory(model_name, additional_data), XAI_MODEL_SCRIPT_NAME
+        )
     ):
         service_data_json["code"]["xai_model_script_content"] = open(
-            os.path.join(get_hf_model_directory(model_name, additional_data), XAI_MODEL_SCRIPT_NAME),
+            os.path.join(
+                get_hf_model_directory(model_name, additional_data),
+                XAI_MODEL_SCRIPT_NAME,
+            ),
             "r",
         ).read()
 
@@ -464,46 +504,44 @@ def prepare_service_data_json(model_name: str, additional_data: dict) -> str:
         dest_file.write(json.dumps(service_data_json, indent=4))
 
 
-def copy_test_image(model_name: str, additional_data: dict) -> str:
-    """Copy a test image for the model."""
+def copy_test_file(model_name: str, additional_data: dict) -> str:
+    """Copy a test file for the model."""
     assert get_hf_model_directory(
         model_name, additional_data
     ), f"Model directory not found for {model_name}."
 
-    # get all image files in the common_assets directory
+    # get all test files in the common_assets directory
     common_assets_dir = os.path.join(os.path.dirname(__file__), "common_assets")
-    test_image_files = [
-        file for file in os.listdir(common_assets_dir) if file.endswith(".png")
-    ]
-    assert len(test_image_files) > 0, f"No test image found in {common_assets_dir}."
+    test_files = [file for file in os.listdir(common_assets_dir)]
+    assert len(test_files) > 0, f"No test file found in {common_assets_dir}."
 
-    # ask the user to select a test image
-    print("Please select a test image from the following list:")
-    for i, file in enumerate(test_image_files):
+    # ask the user to select a test file
+    print("Please select a test file from the following list:")
+    for i, file in enumerate(test_files):
         print(f"{i + 1}. {file}")
-    selected_index = int(input("Enter the number of the selected image: ")) - 1
+    selected_index = int(input("Enter the number of the selected test file: ")) - 1
     assert (
-        0 <= selected_index < len(test_image_files)
-    ), f"Invalid selection: {selected_index + 1}. Please select a valid image number."
-    test_image_file = test_image_files[selected_index]
-    test_image_output_path = os.path.join(
-        get_hf_model_directory(model_name, additional_data), test_image_file
+        0 <= selected_index < len(test_files)
+    ), f"Invalid selection: {selected_index + 1}. Please select a valid number."
+    test_file = test_files[selected_index]
+    test_file_output_path = os.path.join(
+        get_hf_model_directory(model_name, additional_data), test_file
     )
-    test_image_source_path = os.path.join(
-        os.path.dirname(__file__), "common_assets", test_image_file
+    test_file_source_path = os.path.join(
+        os.path.dirname(__file__), "common_assets", test_file
     )
-    with open(test_image_source_path, "rb") as source_file:
-        with open(test_image_output_path, "wb") as dest_file:
+    with open(test_file_source_path, "rb") as source_file:
+        with open(test_file_output_path, "wb") as dest_file:
             dest_file.write(source_file.read())
-    
-    return test_image_output_path
+
+    return test_file_output_path
 
 
 def get_image_repository_name(model_name: str, additional_data: dict) -> str:
     """Get the name of the docker image."""
-    ai_service_image_name = get_docker_image_build_name(model_name, additional_data).replace(
-        ":latest", ""
-    )
+    ai_service_image_name = get_docker_image_build_name(
+        model_name, additional_data
+    ).replace(":latest", "")
     docker_username = os.getenv("DOCKER_USERNAME")
     image_repository_name = f"{docker_username}/{ai_service_image_name}"
     image_repository_name = image_repository_name.replace(" ", "_")
@@ -576,7 +614,9 @@ def update_ai_service_db(model_name: str, additional_data: dict) -> None:
     # check if the AI service already exists in the database
     url = "http://localhost:8000/ai-services/"
     # here has to use the image repository url instead of the model name due to the YOLO model series.
-    response = requests.get(url, params={"image_repository_url": service_data_json["image_repository_url"]})
+    response = requests.get(
+        url, params={"image_repository_url": service_data_json["image_repository_url"]}
+    )
     assert (
         response.status_code == 200
     ), f"Error fetching AI services: {response.status_code}, {response.text}"
@@ -606,7 +646,9 @@ def update_ai_service_db(model_name: str, additional_data: dict) -> None:
             print(f"Error creating AI service: {response.status_code}, {response.text}")
 
 
-def update_service_disk_size(model_name: str, size_in_bytes: int, additional_data: dict) -> None:
+def update_service_disk_size(
+    model_name: str, size_in_bytes: int, additional_data: dict
+) -> None:
     service_data_json_file = os.path.join(
         get_hf_model_directory(model_name, additional_data), "service_data.json"
     )
