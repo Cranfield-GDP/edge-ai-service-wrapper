@@ -11,8 +11,8 @@ def prepare_ai_service_request_data():
     data = {}
     
     # Optional prompt for conditional image captioning
-    prompt_text = input("Please input the prompt text for conditional image captioning (press enter to skip): ")
-    if prompt_text:
-        data["text"] = prompt_text
+    text_input = input("Please input text for conditional image captioning (optional): ")
+    if text_input:
+        data["text"] = text_input
     
     return data
