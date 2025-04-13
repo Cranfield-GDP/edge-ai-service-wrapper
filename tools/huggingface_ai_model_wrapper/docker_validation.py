@@ -44,6 +44,7 @@ def build_ai_service_base_image() -> None:
             f"{base_image_name}:{base_image_tag}",
             "-f",
             base_image_file,
+            "--no-cache",
             ".",
         ],
         cwd=docker_file_directory,
