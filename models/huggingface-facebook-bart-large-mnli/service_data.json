@@ -30,7 +30,7 @@
                 "execution_time_ms": 1631.0891310373943,
                 "execution_cost": 0
             },
-            "idle_container_cpu_memory_usage": "1.1GB",
+            "idle_container_cpu_memory_usage": "1.3GB",
             "idle_container_device_memory_usage": "0GB"
         }
     ],
