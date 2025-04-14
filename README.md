@@ -43,4 +43,4 @@ Located under the `tools/` folder, these utilities simplify the process of prepa
 
 4. Follow the steps in the script to prepare your AI service docker image and database.
 
-![Command Line Interface](tools/huggingface_ai_model_wrapper/command_line_interface.png)
+    ![Command Line Interface](tools/huggingface_ai_model_wrapper/command_line_interface.png)
