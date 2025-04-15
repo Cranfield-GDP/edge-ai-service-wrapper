@@ -1,5 +1,6 @@
 import json
 import os
+import subprocess
 import requests
 import socket
 from openai import OpenAI
@@ -409,6 +410,55 @@ Requirements:
     return acc_info_content
 
 
+def sync_code_content_to_service_data_json(service_data_json, hf_model_directory):
+    service_data_json["code"]["readme_content"] = open(
+        os.path.join(hf_model_directory, "README.md"), "r"
+    ).read()
+    service_data_json["code"]["dockerfile_content"] = open(
+        os.path.join(hf_model_directory, DOCKERFILE_NAME),
+        "r",
+    ).read()
+    service_data_json["code"]["ai_server_script_content"] = open(
+        os.path.join(hf_model_directory, AI_SERVER_SCRIPT_NAME),
+        "r",
+    ).read()
+    service_data_json["code"]["ai_server_utils_script_content"] = open(
+        os.path.join(
+            hf_model_directory,
+            AI_SERVER_UTILS_SCRIPT_NAME,
+        ),
+        "r",
+    ).read()
+    service_data_json["code"]["ai_client_script_content"] = open(
+        os.path.join(hf_model_directory, AI_CLIENT_SCRIPT_NAME),
+        "r",
+    ).read()
+    service_data_json["code"]["ai_client_utils_script_content"] = open(
+        os.path.join(
+            hf_model_directory,
+            AI_CLIENT_UTILS_SCRIPT_NAME,
+        ),
+        "r",
+    ).read()
+    service_data_json["code"]["model_script_content"] = open(
+        os.path.join(hf_model_directory, MODEL_SCRIPT_NAME),
+        "r",
+    ).read()
+    service_data_json["code"]["healthcheck_script_content"] = open(
+        os.path.join(hf_model_directory, HEALTHCHECK_SCRIPT_NAME),
+        "r",
+    ).read()
+
+    if os.path.exists(os.path.join(hf_model_directory, XAI_MODEL_SCRIPT_NAME)):
+        service_data_json["code"]["xai_model_script_content"] = open(
+            os.path.join(
+                hf_model_directory,
+                XAI_MODEL_SCRIPT_NAME,
+            ),
+            "r",
+        ).read()
+
+
 def prepare_service_data_json(model_name: str, additional_data: dict) -> str:
     """Copy a service_data.json for the model."""
     assert get_hf_model_directory(
@@ -441,64 +491,9 @@ def prepare_service_data_json(model_name: str, additional_data: dict) -> str:
         model_name, model_readme, additional_data
     )
 
-    service_data_json["code"]["readme_content"] = model_readme
-    service_data_json["code"]["dockerfile_content"] = open(
-        os.path.join(
-            get_hf_model_directory(model_name, additional_data), DOCKERFILE_NAME
-        ),
-        "r",
-    ).read()
-    service_data_json["code"]["ai_server_script_content"] = open(
-        os.path.join(
-            get_hf_model_directory(model_name, additional_data), AI_SERVER_SCRIPT_NAME
-        ),
-        "r",
-    ).read()
-    service_data_json["code"]["ai_server_utils_script_content"] = open(
-        os.path.join(
-            get_hf_model_directory(model_name, additional_data),
-            AI_SERVER_UTILS_SCRIPT_NAME,
-        ),
-        "r",
-    ).read()
-    service_data_json["code"]["ai_client_script_content"] = open(
-        os.path.join(
-            get_hf_model_directory(model_name, additional_data), AI_CLIENT_SCRIPT_NAME
-        ),
-        "r",
-    ).read()
-    service_data_json["code"]["ai_client_utils_script_content"] = open(
-        os.path.join(
-            get_hf_model_directory(model_name, additional_data),
-            AI_CLIENT_UTILS_SCRIPT_NAME,
-        ),
-        "r",
-    ).read()
-    service_data_json["code"]["model_script_content"] = open(
-        os.path.join(
-            get_hf_model_directory(model_name, additional_data), MODEL_SCRIPT_NAME
-        ),
-        "r",
-    ).read()
-    service_data_json["code"]["healthcheck_script_content"] = open(
-        os.path.join(
-            get_hf_model_directory(model_name, additional_data), HEALTHCHECK_SCRIPT_NAME
-        ),
-        "r",
-    ).read()
-
-    if os.path.exists(
-        os.path.join(
-            get_hf_model_directory(model_name, additional_data), XAI_MODEL_SCRIPT_NAME
-        )
-    ):
-        service_data_json["code"]["xai_model_script_content"] = open(
-            os.path.join(
-                get_hf_model_directory(model_name, additional_data),
-                XAI_MODEL_SCRIPT_NAME,
-            ),
-            "r",
-        ).read()
+    sync_code_content_to_service_data_json(
+        service_data_json, get_hf_model_directory(model_name, additional_data)
+    )
 
     with open(output_path, "w") as dest_file:
         dest_file.write(json.dumps(service_data_json, indent=4))
@@ -659,3 +654,4 @@ def update_service_disk_size(
     with open(service_data_json_file, "w") as file:
         json.dump(service_data, file, indent=4)
     print(f"Service disk size updated to {size_in_bytes} Bytes.")
+

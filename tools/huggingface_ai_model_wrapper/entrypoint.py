@@ -13,6 +13,7 @@ from utils import (
     update_ai_service_db,
     prepare_service_data_json,
 )
+from management import sync_code_with_image_and_database
 
 huggingface_model_name = "microsoft/resnet-50"
 additional_data = {}
@@ -157,52 +158,67 @@ def option_stop_docker_container():
         print(f"Error: {e}")
 
 
-OPTIONS = [
-    {
-        "label": "Build the base image for the AI service",
-        "function": option_build_service_base_image,
-    },
-    {
-        "label": "Generate codes to wrap a given AI model into a FastAPI service",
-        "function": option_code_generation,
-    },
-    {
-        "label": "Prepare model service data json",
-        "function": option_prepare_model_service_data,
-    },
-    {
-        "label": "Build and run the docker container for the AI service",
-        "function": option_build_and_run_docker_container,
-    },
-    {
-        "label": "Copy a test file to the model directory",
-        "function": option_copy_test_file,
-    },
-    {
-        "label": "Open another terminal to test the AI service",
-        "function": option_open_client_script_terminal,
-    },
-    {
-        "label": "Update container memory usage",
-        "function": option_update_container_memory_usage,
-    },
-    {
-        "label": "Push the docker image to the Docker Hub",
-        "function": option_push_docker_image,
-    },
-    {
-        "label": "Update the AI service database",
-        "function": option_update_ai_service_database,
-    },
-    {
-        "label": "Stop the docker container",
-        "function": option_stop_docker_container,
-    },
-]
+def option_sync_code_with_image_and_database():
+    """Sync the AI service source code with AI service images and database."""
+    try:
+        sync_code_with_image_and_database()
+        print("Syncing code with image and database...")
+    except Exception as e:
+        print(f"Error: {e}")
 
+
+OPTIONS = {
+    "Management Options": [
+        {
+            "label": "Build the base image for the AI service",
+            "function": option_build_service_base_image,
+        },
+        {
+            "label": "Sync the AI service source code with AI service images and database",
+            "function": option_sync_code_with_image_and_database,
+        }
+    ],
+    "AI Service Options": [
+        {
+            "label": "Generate codes to wrap a given AI model into a FastAPI service",
+            "function": option_code_generation,
+        },
+        {
+            "label": "Prepare model service data json",
+            "function": option_prepare_model_service_data,
+        },
+        {
+            "label": "Build and run the docker container for the AI service",
+            "function": option_build_and_run_docker_container,
+        },
+        {
+            "label": "Copy a test file to the model directory",
+            "function": option_copy_test_file,
+        },
+        {
+            "label": "Open another terminal to test the AI service",
+            "function": option_open_client_script_terminal,
+        },
+        {
+            "label": "Update container memory usage",
+            "function": option_update_container_memory_usage,
+        },
+        {
+            "label": "Push the docker image to the Docker Hub",
+            "function": option_push_docker_image,
+        },
+        {
+            "label": "Update the AI service database",
+            "function": option_update_ai_service_database,
+        },
+        {
+            "label": "Stop the docker container",
+            "function": option_stop_docker_container,
+        },
+    ],
+}
 
 def main():
-
     console = Console()
 
     while True:
@@ -211,8 +227,16 @@ def main():
         table.add_column("Option", justify="center", style="cyan", no_wrap=True)
         table.add_column("Description", style="yellow")
 
-        for i, option in enumerate(OPTIONS, start=1):
-            table.add_row(str(i), option["label"])
+        option_index = 1
+        for section, options in OPTIONS.items():
+            # Add section header
+            table.add_row("", f"[bold magenta]{section}[/bold magenta]")
+            table.add_row("", "[dim]-----------------------------[/dim]")
+
+            for option in options:
+                table.add_row(str(option_index), option["label"])
+                option_index += 1
+
             # Add a separator row for better readability
             table.add_row("", "[dim]-----------------------------[/dim]")
 
@@ -228,10 +252,17 @@ def main():
             if choice == "q":
                 console.print("[bold green]Exiting the program. Goodbye![/bold green]")
                 sys.exit(0)
-            elif choice.isdigit() and 1 <= int(choice) <= len(OPTIONS):
-                option = OPTIONS[int(choice) - 1]
-                console.print(f"[bold yellow]Executing:[/bold yellow] {option['label']}")
-                option["function"]()
+            elif choice.isdigit() and 1 <= int(choice) <= sum(len(options) for options in OPTIONS.values()):
+                # Find the selected option
+                option_index = int(choice)
+                for options in OPTIONS.values():
+                    if option_index <= len(options):
+                        selected_option = options[option_index - 1]
+                        break
+                    option_index -= len(options)
+                
+                console.print(f"[bold yellow]Executing:[/bold yellow] {selected_option['label']}")
+                selected_option["function"]()
             else:
                 console.print("[bold red]Invalid choice. Please select a valid option (1-7 or 'q').[/bold red]")
         
