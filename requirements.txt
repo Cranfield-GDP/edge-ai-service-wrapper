@@ -1,0 +1,31 @@
+# Core Deep Learning Framework
+torch>=2.0.0
+torchvision>=0.15.0
+
+# Web Framework and Server
+fastapi>=0.104.0
+uvicorn>=0.24.0
+
+# Hugging Face Transformers and Models
+transformers>=4.35.0
+
+# Computer Vision Models
+ultralytics>=8.0.0
+
+# Image Processing
+Pillow>=10.0.0
+
+# Explainable AI (XAI)
+pytorch-grad-cam>=1.4.0
+
+# Numerical Computing
+numpy>=1.24.0
+
+# HTTP Requests
+requests>=2.31.0
+
+# Visualization
+matplotlib>=3.8.0
+
+# File Upload Handling
+python-multipart>=0.0.6
